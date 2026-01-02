@@ -1,0 +1,67 @@
+@base_url=http://localhost:4000/api
+@token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzaGlwbGlvIiwiZXhwIjoxNzY5ODAwNjQ0LCJpYXQiOjE3NjczODE0NDQsImlzcyI6InNoaXBsaW8iLCJqdGkiOiJmMGI1OGZmOS1mMGE3LTRmZDgtOTU3ZC1mZjcwNThiY2MzNjYiLCJuYmYiOjE3NjczODE0NDMsInN1YiI6IjEiLCJ0eXAiOiJhY2Nlc3MifQ.cCl5FpGQ6yG_M-mkU-m-UYERzaoc74BQ2x7YYdUOKWnCFzHneXscwEkSrM9ONBlQkqbsyIk0K1pPV5tglJ0kBQ
+
+# callback
+###
+GET {{base_url}}/auth/callback
+
+# Register a new user
+###
+POST {{base_url}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "hello@shiplio.run",
+  "password": "Password123!"
+}
+
+# Register an already existing user
+###
+POST {{base_url}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "hello@shiplio.run",
+  "password": "Password123!"
+}
+
+###
+
+# Login
+###
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "hello@shiplio.run",
+  "password": "Password123!"
+}
+
+# Login with wrong password
+###
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "hello@shiplio.run",
+  "password": "Password123"
+}
+
+
+### Login with unregistered email
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "wrong@shiplio.run",
+  "password": "Password123!"
+}
+
+### Create Deployment
+POST {{base_url}}/projects/1/deploy
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "id": 1
+}
