@@ -1,0 +1,74 @@
+defmodule EngineWeb.ProjectController do
+  use EngineWeb, :controller
+  alias Engine.Projects
+  alias EngineWeb.Auth.Guardian
+
+  def create(conn, %{"name" => name}) do
+    user = Guardian.Plug.current_resource(conn)
+
+    case Projects.create_project(user, %{name: name}) do
+      {:ok, project} ->
+        conn
+        |> put_status(:created)
+        |> json(%{
+          data: %{
+            id: project.id,
+            name: project.name,
+            status: project.status,
+            inserted_at: project.inserted_at
+          },
+          message: "Project shell created successfully."
+        })
+
+      {:error, changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          message: "Could not create project",
+          errors: EngineWeb.ChangesetJSON.error_details(changeset)
+        })
+    end
+  end
+
+  def index(conn, _params) do
+    user = Guardian.Plug.current_resource(conn)
+    projects = Projects.list_user_projects(user)
+
+    json(conn, %{
+      data:
+        Enum.map(projects, fn project ->
+          %{
+            id: project.id,
+            name: project.name,
+            status: project.status,
+            inserted_at: project.inserted_at
+          }
+        end)
+    })
+  end
+
+  def deploy(conn, %{"id" => project_id, "file" => %Plug.Upload{path: tmp_path}}) do
+    user = Guardian.Plug.current_resource(conn)
+    project = Projects.get_project_for_user!(user, project_id)
+
+    build_dir = Path.join(["uploads", project_id])
+    File.mkdir_p!(build_dir)
+    dest_path = Path.join(build_dir, "source.tar.gz")
+
+    case File.cp(tmp_path, dest_path) do
+      :ok ->
+        Engine.Deployments.BuildSupervisor.start_build(project.id, dest_path)
+        conn
+        |> put_status(:accepted)
+        |> json(%{message: "Build triggered in background", project: project.name})
+
+      {:error, reason} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{
+          message: "Could not upload file.",
+          error: reason
+        })
+    end
+  end
+end

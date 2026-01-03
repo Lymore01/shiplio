@@ -1,5 +1,4 @@
 @base_url=http://localhost:4000/api
-@token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzaGlwbGlvIiwiZXhwIjoxNzY5ODAwNjQ0LCJpYXQiOjE3NjczODE0NDQsImlzcyI6InNoaXBsaW8iLCJqdGkiOiJmMGI1OGZmOS1mMGE3LTRmZDgtOTU3ZC1mZjcwNThiY2MzNjYiLCJuYmYiOjE3NjczODE0NDMsInN1YiI6IjEiLCJ0eXAiOiJhY2Nlc3MifQ.cCl5FpGQ6yG_M-mkU-m-UYERzaoc74BQ2x7YYdUOKWnCFzHneXscwEkSrM9ONBlQkqbsyIk0K1pPV5tglJ0kBQ
 
 # callback
 ###
@@ -29,6 +28,7 @@ Content-Type: application/json
 
 # Login
 ###
+# @name login
 POST {{base_url}}/auth/login
 Content-Type: application/json
 
@@ -36,6 +36,22 @@ Content-Type: application/json
   "email": "hello@shiplio.run",
   "password": "Password123!"
 }
+
+###
+@token = {{login.response.body.token}}
+@projectId = 1
+
+### Upload/Deploy Project
+POST {{base_url}}/projects/{{projectId}}/deployments
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="bundle.tar.gz"
+Content-Type: application/x-gzip
+
+< ./bundle.tar.gz
+--boundary--
 
 # Login with wrong password
 ###
@@ -57,11 +73,16 @@ Content-Type: application/json
   "password": "Password123!"
 }
 
-### Create Deployment
-POST {{base_url}}/projects/1/deploy
+### Create Project
+POST {{base_url}}/projects
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "id": 1
+  "name": "my-first-project"
 }
+
+### List Projects
+GET {{base_url}}/projects
+Authorization: Bearer {{token}}
+

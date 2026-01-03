@@ -17,7 +17,8 @@ defmodule Engine.Application do
       # Start a worker by calling: Engine.Worker.start_link(arg)
       # {Engine.Worker, arg},
       # Start to serve requests, typically the last entry
-      EngineWeb.Endpoint
+      EngineWeb.Endpoint,
+      Engine.Deployments.BuildSupervisor
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

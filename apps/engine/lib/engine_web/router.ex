@@ -18,7 +18,11 @@ defmodule EngineWeb.Router do
   scope "/api", EngineWeb do
     pipe_through [:api, EngineWeb.Auth.Pipeline]
 
-    post "/projects/:id/deploy", DeploymentController, :create
+    get "/projects", ProjectController, :index
+    post "/projects", ProjectController, :create
+
+
+    post "/projects/:id/deployments", ProjectController, :deploy
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
