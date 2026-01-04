@@ -43,6 +43,9 @@ config :engine, EngineWeb.Auth.Guardian,
   secret_key: "MlrkVgb8-jIKj7tU-hkzi09tYg4SJQriqkkY2GUxN8KVKpuMICDvrwEAbr4iL4wV",
   ttl: {30, :days}
 
+config :engine, :uploads,
+  root_path: "uploads"
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
