@@ -1,0 +1,48 @@
+### 1. Register a new user
+# @name register
+POST http://localhost:4000/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "pro@shiplio.com",
+  "password": "Password1234"
+}
+
+### 2. Login to get the JWT
+# @name login
+POST http://localhost:4000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "pro@shiplio.com",
+  "password": "Password1234"
+}
+
+###
+@token = {{login.response.body.token}}
+
+### 3. Create a project shell
+# @name create_project
+POST http://localhost:4000/api/projects
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "my-first-app"
+}
+
+###
+@project_id = {{create_project.response.body.data.id}}
+
+### 4. Deploy the Zip File
+# Note: Ensure source.tar.gz exists in the same folder as this .rest file
+POST http://localhost:4000/api/projects/{{project_id}}/deployments
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="source.tar.gz"
+Content-Type: application/gzip
+
+< ./source.tar.gz
+------WebKitFormBoundary7MA4YWxkTrZu0gW--

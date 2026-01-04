@@ -48,12 +48,14 @@ defmodule EngineWeb.ProjectController do
   end
 
   def deploy(conn, %{"id" => project_id, "file" => %Plug.Upload{path: tmp_path}}) do
+    root = Application.get_env(:engine, :uploads)[:root_path] || "uploads"
     user = Guardian.Plug.current_resource(conn)
     project = Projects.get_project_for_user!(user, project_id)
 
-    build_dir = Path.join(["uploads", project_id])
-    File.mkdir_p!(build_dir)
-    dest_path = Path.join(build_dir, "source.tar.gz")
+    timestamp = DateTime.utc_now() |> DateTime.to_unix() |> Integer.to_string()
+
+    dest_path = Path.join([root, project_id, timestamp, "source.tar.gz"])
+    File.mkdir_p!(Path.dirname(dest_path))
 
     case File.cp(tmp_path, dest_path) do
       :ok ->

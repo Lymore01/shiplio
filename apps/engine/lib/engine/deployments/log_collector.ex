@@ -1,14 +1,41 @@
 defmodule Engine.Deployments.LogCollector do
-  defstruct [:project_id, :prefix]
+  @moduledoc """
+  Collects streamed shell output (e.g Docker, tar)
+  and forwards it as structured logs via PubSub.
+  """
+
+  defstruct [:project_id, :step]
 
   defimpl Collectable do
-    def into(config) do
+    def into(%{project_id: project_id, step: step}) do
       collector_fun = fn
         _state, {:cont, line} ->
-          message = "[#{config.prefix}] #{line}"
-          Engine.Deployments.BuildWorker.broadcast_log(config.project_id, message)
-        state, :done -> state
-        _state, :halt -> :ok
+          line = String.trim_trailing(line)
+
+          if line != "" do
+            event = %{
+              level: :stream,
+              step: step,
+              message: line,
+              timestamp: DateTime.utc_now()
+            }
+
+            Phoenix.PubSub.broadcast(
+              Engine.PubSub,
+              "logs:#{project_id}",
+              {:new_log, event}
+            )
+
+            IO.puts("[#{step}] #{line}")
+          end
+
+          :ok
+
+        state, :done ->
+          state
+
+        _state, :halt ->
+          :ok
       end
 
       {:ok, collector_fun}

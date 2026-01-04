@@ -1,7 +1,6 @@
 defmodule Engine.Deployments.BuildWorker do
   use GenServer, restart: :temporary
   alias Engine.Deployments.Templates
-  alias Engine.Deployments.Storage
 
   def start_link({project_id, path}) do
     GenServer.start_link(__MODULE__, {project_id, path})
@@ -15,6 +14,8 @@ defmodule Engine.Deployments.BuildWorker do
 
   @impl true
   def handle_info(:perform_build, state) do
+    workspace_dir = Path.dirname(state.path)
+
     result =
       with {:ok, build_dir} <- extract_source(state),
            {:ok, config} <- resolve_config(state.project_id, build_dir),
@@ -23,54 +24,62 @@ defmodule Engine.Deployments.BuildWorker do
         run_docker_container(state.project_id, image_tag)
       end
 
+    log_info(state.project_id, :cleanup, "🧹 Cleaning up build workspace...")
+    File.rm_rf!(workspace_dir)
+
     case result do
-      {:ok, _} -> broadcast_log(state.project_id, "✅ Deployment successful!\n")
-      {:error, reason} -> broadcast_log(state.project_id, "\n❌ Deployment failed: #{reason}\n")
+      {:ok, _port} ->
+        log_success(state.project_id, :done, "✅ Deployment successful!")
+
+      {:error, reason} ->
+        log_error(state.project_id, :done, "❌ Deployment failed: #{reason}")
     end
 
     {:stop, :normal, state}
   end
 
   defp extract_source(state) do
-    build_dir = Storage.build_path(state.project_id)
-    File.mkdir_p!(build_dir)
+    abs_archive_path = Path.expand(state.path)
+    build_dir = Path.dirname(abs_archive_path)
+    archive_file = Path.basename(abs_archive_path)
 
-    broadcast_log(state.project_id, "📦 Extracting source code...\n")
+    log_info(state.project_id, :extract, "📦 Extracting source code...")
 
-    command = "tar -xzvf \"#{state.path}\" -C \"#{build_dir}\""
+    cd_cmd = if :os.type() == {:win32, :nt}, do: "cd /d", else: "cd"
+    command = "#{cd_cmd} \"#{build_dir}\" && tar -xzvf \"#{archive_file}\""
 
     {_, exit_code} =
       System.shell(command,
         stderr_to_stdout: true,
-       into: %Engine.Deployments.LogCollector{project_id: state.project_id, prefix: "extract"}
+        into: log_stream(state.project_id, :extract)
       )
 
-    case exit_code do
-      0 ->
-        File.rm!(state.path)
-        {:ok, build_dir}
-
-      _ ->
-        {:error, "Extraction failed"}
+    if exit_code == 0 do
+      File.rm!(abs_archive_path)
+      log_success(state.project_id, :extract, "✔ Source extracted successfully")
+      {:ok, build_dir}
+    else
+      File.rm!(abs_archive_path)
+      log_error(state.project_id, :extract, "❌ Source extraction failed")
+      {:error, "Source extraction failed"}
     end
   end
 
   defp resolve_config(project_id, build_dir) do
     config_path = Path.join(build_dir, "shiplio.json")
 
-    if File.exists?(config_path) do
-      broadcast_log(project_id, "🔍 Found shiplio.json config.\n")
-      {:ok, Jason.decode!(File.read!(config_path))}
-    else
-      cond do
-        File.exists?(Path.join(build_dir, "package.json")) ->
-          broadcast_log(project_id, "🔍 No config found. Auto-detected Node.js environment.\n")
-          {:ok, %{"runtime" => "nodejs", "scripts" => %{}}}
+    cond do
+      File.exists?(config_path) ->
+        log_info(project_id, :config, "🔍 Found shiplio.json config")
+        {:ok, Jason.decode!(File.read!(config_path))}
 
-        true ->
-          broadcast_log(project_id, "🔍 No config found. Falling back to raw Dockerfile mode.\n")
-          {:ok, %{"runtime" => "dockerfile", "scripts" => %{}}}
-      end
+      File.exists?(Path.join(build_dir, "package.json")) ->
+        log_info(project_id, :config, "🔍 Auto-detected Node.js environment")
+        {:ok, %{"runtime" => "nodejs", "scripts" => %{}}}
+
+      true ->
+        log_info(project_id, :config, "🔍 Falling back to raw Dockerfile mode")
+        {:ok, %{"runtime" => "dockerfile", "scripts" => %{}}}
     end
   end
 
@@ -78,11 +87,11 @@ defmodule Engine.Deployments.BuildWorker do
     dockerfile_path = Path.wildcard("#{build_dir}/**/[Dd]ockerfile") |> List.first()
 
     if dockerfile_path do
-      broadcast_log(project_id, "📜 Using provided Dockerfile at #{dockerfile_path}\n")
+      log_info(project_id, :dockerfile, "📜 Using provided Dockerfile")
       normalize_encoding(dockerfile_path)
       {:ok, Path.dirname(dockerfile_path)}
     else
-      broadcast_log(project_id, "🔨 Generating Dockerfile for #{config["runtime"]}...\n")
+      log_info(project_id, :dockerfile, "🔨 Generating Dockerfile (#{config["runtime"]})")
       content = Templates.get_dockerfile(config["runtime"], config)
       File.write!(Path.join(build_dir, "Dockerfile"), content)
       {:ok, build_dir}
@@ -91,85 +100,118 @@ defmodule Engine.Deployments.BuildWorker do
 
   defp run_docker_build(project_id, context_dir) do
     tag = "shiplio-app-#{project_id}"
-    broadcast_log(project_id, "Starting Docker build...\n")
+
+    log_info(project_id, :build, "🚀 Building Docker image...")
 
     {_, exit_code} =
       System.shell("docker build -t #{tag} \"#{context_dir}\"",
         stderr_to_stdout: true,
-        into: %Engine.Deployments.LogCollector{project_id: project_id, prefix: "build"}
+        into: log_stream(project_id, :build)
       )
 
-    if exit_code == 0, do: {:ok, tag}, else: {:error, "Build failed"}
+    if exit_code == 0 do
+      log_success(project_id, :build, "✔ Docker image built")
+      {:ok, tag}
+    else
+      {:error, "Docker build failed"}
+    end
   end
 
-  defp run_docker_container(project_id, project_tag) do
+  defp run_docker_container(project_id, image_tag) do
     container_name = "shiplio-container-#{project_id}"
 
-    broadcast_log(project_id, "🧹 Cleaning up existing instances...\n")
+    log_info(project_id, :run, "🧹 Cleaning up existing containers")
     System.shell("docker rm -f #{container_name} > /dev/null 2>&1")
 
-    broadcast_log(project_id, "Booting container...\n")
+    log_info(project_id, :run, "🚀 Booting container")
 
-    run_command = """
+    run_cmd = """
     docker run -d \
       --name #{container_name} \
       -p :8080 \
       --memory="512m" \
       --cpus="0.5" \
-      #{project_tag}
+      #{image_tag}
     """
 
-    case System.shell(run_command) do
-      {_output, 0} ->
-        {raw_output, 0} = System.shell("docker port #{container_name} 8080")
+    case System.shell(run_cmd) do
+      {_out, 0} ->
+        {raw, 0} = System.shell("docker port #{container_name} 8080")
 
         port =
-          raw_output
+          raw
           |> String.trim()
           |> String.split(":")
           |> List.last()
 
-        broadcast_log(project_id, "⏳ Waiting for app to become healthy on port #{port}...\n")
+        log_info(project_id, :run, "⏳ Waiting for app on port #{port}")
 
         case wait_for_healthy(port) do
           :ok ->
-            broadcast_log(project_id, "✨ App is LIVE at http://localhost:#{port}\n")
+            log_success(project_id, :run, "✨ App LIVE at http://localhost:#{port}")
             {:ok, port}
 
           {:error, _} ->
-            {:error, "App started but failed to respond on port #{port}"}
+            {:error, "Container started but health check failed"}
         end
 
-      {error, _} ->
-        {:error, "Failed to start container: #{error}"}
+      _ ->
+        {:error, "Failed to start container"}
     end
   end
 
-  def broadcast_log(project_id, message) do
-    IO.write(message)
+
+  defp log_info(project_id, step, msg),
+    do: broadcast(project_id, :info, step, msg)
+
+  defp log_success(project_id, step, msg),
+    do: broadcast(project_id, :success, step, msg)
+
+  defp log_error(project_id, step, msg),
+    do: broadcast(project_id, :error, step, msg)
+
+  defp broadcast(project_id, level, step, msg) do
+    event = %{
+      level: level,
+      step: step,
+      message: msg,
+      timestamp: DateTime.utc_now()
+    }
 
     Phoenix.PubSub.broadcast(
       Engine.PubSub,
       "logs:#{project_id}",
-      {:new_log, %{message: message}}
+      {:new_log, event}
     )
+
+    IO.puts("[#{level}] #{msg}")
+  end
+
+  defp log_stream(project_id, step) do
+    %Engine.Deployments.LogCollector{
+      project_id: project_id,
+      step: step
+    }
   end
 
   defp normalize_encoding(path) do
-    content = File.read!(path) |> String.replace(~r/[^\x20-\x7E\n\r\t]/, "")
+    content =
+      File.read!(path)
+      |> String.replace(~r/[^\x09\x0A\x0D\x20-\x7E]/, "")
+
     File.write!(path, content)
   end
 
   defp wait_for_healthy(port, retries \\ 10)
-  defp wait_for_healthy(_port, 0), do: {:error, :timeout}
+  defp wait_for_healthy(_, 0), do: {:error, :timeout}
 
   defp wait_for_healthy(port, retries) do
-    case :gen_tcp.connect(~c'localhost', String.to_integer(port), [], 1000) do
+    case :gen_tcp.connect(~c"localhost", String.to_integer(port), [], 1000) do
       {:ok, socket} ->
         :gen_tcp.close(socket)
         :ok
 
-      {:error, _} ->
+      _ ->
         Process.sleep(1000)
         wait_for_healthy(port, retries - 1)
     end
