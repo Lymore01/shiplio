@@ -1,3 +1,4 @@
 # Ignore all text files
 *.txt
 requirements.md
+node_modules/
