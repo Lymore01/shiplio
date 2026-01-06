@@ -47,6 +47,27 @@ defmodule EngineWeb.ProjectController do
     })
   end
 
+  def show(conn, %{"id" => project_id}) do
+    user = Guardian.Plug.current_resource(conn)
+
+    case Projects.get_project_for_user(user, project_id) do
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{message: "Project not found."})
+
+      project ->
+        json(conn, %{
+          data: %{
+            id: project.id,
+            name: project.name,
+            status: project.status,
+            inserted_at: project.inserted_at
+          }
+        })
+    end
+  end
+
   def deploy(conn, %{"id" => project_id, "file" => %Plug.Upload{path: tmp_path}}) do
     root = Application.get_env(:engine, :uploads)[:root_path] || "uploads"
     user = Guardian.Plug.current_resource(conn)
@@ -60,6 +81,7 @@ defmodule EngineWeb.ProjectController do
     case File.cp(tmp_path, dest_path) do
       :ok ->
         Engine.Deployments.BuildSupervisor.start_build(project.id, dest_path)
+
         conn
         |> put_status(:accepted)
         |> json(%{message: "Build triggered in background", project: project.name})

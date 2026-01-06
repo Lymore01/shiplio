@@ -28,7 +28,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "name": "my-first-app"
+  "name": "my-second-app"
 }
 
 ###
@@ -46,3 +46,11 @@ Content-Type: application/gzip
 
 < ./source.tar.gz
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Get Projects
+GET http://localhost:4000/api/projects
+Authorization: Bearer {{token}}
+
+### Get Project Details
+GET http://localhost:4000/api/projects/34
+Authorization: Bearer {{token}}

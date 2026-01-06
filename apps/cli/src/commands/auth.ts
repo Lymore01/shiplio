@@ -1,13 +1,13 @@
 import inquirer from "inquirer";
 import ora from "ora";
 import chalk from "chalk";
-import { apiClient } from "../services/api";
+import { apiClient } from "../services/api.js";
 import {
   saveToken,
   readToken as getToken,
   logOut as logout,
-} from "../services/auth";
-import { formatErrors } from "../utils/formatErrors";
+} from "../services/auth.js";
+import { handleError } from "../utils/formatErrors.js";
 
 const AUTH_PROMPTS = [
   {
@@ -66,7 +66,8 @@ export async function login() {
       )
     );
   } catch (error: any) {
-    handleAuthError(error, "Authentication failed");
+    handleError(error, "Login failed");
+    process.exit(1);
   }
 }
 
@@ -86,15 +87,7 @@ export async function register() {
     spinner.succeed(chalk.green("Account created successfully!"));
     console.log(chalk.blue("You have been automatically logged in."));
   } catch (error: any) {
-    handleAuthError(error, "Registration failed");
+    handleError(error, "Registration failed");
+    process.exit(1);
   }
-}
-
-function handleAuthError(error: any, fallbackMessage: string) {
-  const apiErrors =
-    error?.response?.data?.errors || error?.response?.data?.error;
-  const message = formatErrors(apiErrors) || chalk.red(`X ${fallbackMessage}`);
-
-  console.log(message);
-  process.exit(1);
 }

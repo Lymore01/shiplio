@@ -1,0 +1,12 @@
+# Shiplio Ignore - prevents large/sensitive files from being uploaded
+.git
+.shiplio
+.env
+.DS_Store
+thumbs.db
+
+# Stack-specific files
+node_modules
+dist
+.npm
+npm-debug.log

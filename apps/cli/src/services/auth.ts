@@ -15,6 +15,7 @@ export async function saveToken(token: string) {
 export function readToken() {
   if (fs.existsSync(SESSION_FILE)) {
     const sessionData = fs.readFileSync(SESSION_FILE, "utf-8");
+    if (!sessionData) return null;
     const { token } = JSON.parse(sessionData);
     return token;
   } else {
