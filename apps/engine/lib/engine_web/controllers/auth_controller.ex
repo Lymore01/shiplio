@@ -29,6 +29,11 @@ defmodule EngineWeb.AuthController do
     end
   end
 
+  def me(conn, _params) do
+    user = Guardian.Plug.current_resource(conn)
+    json(conn, %{user: %{email: user.email}})
+  end
+
   def callback(conn, _params) do
     json(conn, %{message: "Callback endpoint"})
   end

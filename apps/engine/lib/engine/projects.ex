@@ -18,10 +18,23 @@ defmodule Engine.Projects do
   end
 
   @doc """
+  Gets a single project by ID.
+  """
+  def get_project!(id) do
+    Repo.get_by!(Project, id: id)
+  end
+
+  @doc """
   Gets a single project by ID, but only if it belongs to the user.
   """
   def get_project_for_user!(%User{} = user, id) do
     Repo.get_by!(Project, id: id, user_id: user.id)
+  end
+
+  def get_project_for_user(user, id) do
+    Project
+    |> where([p], p.id == ^id and p.user_id == ^user.id)
+    |> Repo.one()
   end
 
   @doc """
@@ -49,9 +62,10 @@ defmodule Engine.Projects do
   """
   def exists_for_user?(project_id, user_id) do
     query =
-      from p in Project,
+      from(p in Project,
         where: p.id == ^project_id and p.user_id == ^user_id,
         select: count(p.id)
+      )
 
     Repo.one(query) > 0
   end
