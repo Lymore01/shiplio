@@ -6,6 +6,7 @@ import chalk from "chalk";
 import { init } from "./commands/init.js";
 import { link } from "./commands/link";
 import { status } from "./commands/status.js";
+import { whoami } from "./commands/whoami.js";
 
 const program = new Command();
 
@@ -21,6 +22,8 @@ program
   .command("link")
   .description("Link this directory to an existing Shiplio project")
   .action(link);
+
+program.command("whoami").description("Who am I?").action(whoami);
 
 program
   .command("status")

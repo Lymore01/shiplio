@@ -52,5 +52,9 @@ GET http://localhost:4000/api/projects
 Authorization: Bearer {{token}}
 
 ### Get Project Details
-GET http://localhost:4000/api/projects/34
+GET http://localhost:4000/api/projects/38
+Authorization: Bearer {{token}}
+
+### Me
+GET http://localhost:4000/api/auth/me
 Authorization: Bearer {{token}}

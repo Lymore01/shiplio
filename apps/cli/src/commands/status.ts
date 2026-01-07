@@ -57,8 +57,13 @@ export async function status() {
         error,
         "Project not found on server. Your local link might be broken."
       );
+      console.log(chalk.dim("\nRun 'shiplio link' to fix it."));
     } else {
-      handleError(error, "Failed to fetch project status");
+      handleError(
+        error,
+        "Failed to fetch project status. Your local link might be broken."
+      );
+      console.log(chalk.dim("\nRun 'shiplio link' to fix it."));
     }
   }
 }

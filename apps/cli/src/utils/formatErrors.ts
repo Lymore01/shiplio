@@ -40,7 +40,7 @@ function capitalize(str: string) {
 
 export function handleError(error: any, contextTitle: string) {
   const apiErrors =
-    error?.response?.data?.errors || error?.response?.data?.error;
+    error?.response?.data?.errors || error?.response?.data?.error || error?.response?.data?.message
 
   const message = formatErrors(contextTitle, apiErrors);
 

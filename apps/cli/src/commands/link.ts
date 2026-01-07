@@ -27,7 +27,7 @@ export async function link() {
 
     const { selectedProject } = await inquirer.prompt({
       name: "selectedProject",
-      type: "list",
+      type: "select",
       message: "Which project do you want to link to this directory?\n",
       choices: projects.map((p: any) => ({
         name: `${p.name} ${chalk.dim(`(${p.status})`)}`,

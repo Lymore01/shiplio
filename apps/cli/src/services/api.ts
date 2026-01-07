@@ -33,6 +33,7 @@ apiClient.interceptors.response.use(
     ) {
       logOut();
       console.log(chalk.yellow("Session expired. Please login again."));
+      console.log(chalk.dim("Run 'shiplio login' to get started."));
     }
     return Promise.reject(error);
   }

@@ -23,6 +23,8 @@ defmodule EngineWeb.Router do
   scope "/api", EngineWeb do
     pipe_through [:api, :auth]
 
+    get "/auth/me", AuthController, :me
+
     get "/projects", ProjectController, :index
     get "/projects/:id", ProjectController, :show
     post "/projects", ProjectController, :create
