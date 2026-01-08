@@ -24,7 +24,7 @@ defmodule Engine.Deployments.BuildWorker do
         run_docker_container(state.project_id, image_tag)
       end
 
-    log_info(state.project_id, :cleanup, "🧹 Cleaning up build workspace...")
+    log_info(state.project_id, :cleanup, "Cleaning up build workspace...")
     File.rm_rf!(workspace_dir)
 
     case result do
@@ -32,7 +32,7 @@ defmodule Engine.Deployments.BuildWorker do
         log_success(state.project_id, :done, "✅ Deployment successful!")
 
       {:error, reason} ->
-        log_error(state.project_id, :done, "❌ Deployment failed: #{reason}")
+        log_error(state.project_id, :done, "Deployment failed: #{reason}")
     end
 
     {:stop, :normal, state}
@@ -45,21 +45,17 @@ defmodule Engine.Deployments.BuildWorker do
 
     log_info(state.project_id, :extract, "📦 Extracting source code...")
 
-    cd_cmd = if :os.type() == {:win32, :nt}, do: "cd /d", else: "cd"
-    command = "#{cd_cmd} \"#{build_dir}\" && tar -xzvf \"#{archive_file}\""
+    cmd = "tar -xzvf \"#{abs_archive_path}\" -C \"#{build_dir}\""
+    port = Port.open({:spawn, cmd}, [:binary, :exit_status, :stderr_to_stdout, :line])
 
-    {_, exit_code} =
-      System.shell(command,
-        stderr_to_stdout: true,
-        into: log_stream(state.project_id, :extract)
-      )
+    status = await_port_completion(port, state.project_id, :extract)
 
-    if exit_code == 0 do
-      File.rm!(abs_archive_path)
+    File.rm!(abs_archive_path)
+
+    if status == 0 do
       log_success(state.project_id, :extract, "✔ Source extracted successfully")
       {:ok, build_dir}
     else
-      File.rm!(abs_archive_path)
       log_error(state.project_id, :extract, "❌ Source extraction failed")
       {:error, "Source extraction failed"}
     end
@@ -84,6 +80,7 @@ defmodule Engine.Deployments.BuildWorker do
   end
 
   defp prepare_build_context(project_id, build_dir, config) do
+    stack_type = config["stack"] || "unknown"
     dockerfile_path = Path.wildcard("#{build_dir}/**/[Dd]ockerfile") |> List.first()
 
     if dockerfile_path do
@@ -91,8 +88,8 @@ defmodule Engine.Deployments.BuildWorker do
       normalize_encoding(dockerfile_path)
       {:ok, Path.dirname(dockerfile_path)}
     else
-      log_info(project_id, :dockerfile, "🔨 Generating Dockerfile (#{config["runtime"]})")
-      content = Templates.get_dockerfile(config["runtime"], config)
+      log_info(project_id, :dockerfile, "🔨 Generating Dockerfile (#{stack_type})")
+      content = Templates.get_dockerfile(stack_type, config)
       File.write!(Path.join(build_dir, "Dockerfile"), content)
       {:ok, build_dir}
     end
@@ -100,27 +97,39 @@ defmodule Engine.Deployments.BuildWorker do
 
   defp run_docker_build(project_id, context_dir) do
     tag = "shiplio-app-#{project_id}"
-
     log_info(project_id, :build, "🚀 Building Docker image...")
 
-    {_, exit_code} =
-      System.shell("docker build -t #{tag} \"#{context_dir}\"",
-        stderr_to_stdout: true,
-        into: log_stream(project_id, :build)
+    port =
+      Port.open(
+        {:spawn, "docker build -t #{tag} \"#{context_dir}\""},
+        [:binary, :exit_status, :stderr_to_stdout, :line]
       )
 
-    if exit_code == 0 do
-      log_success(project_id, :build, "✔ Docker image built")
-      {:ok, tag}
-    else
-      {:error, "Docker build failed"}
+    case await_port_completion(port, project_id, :build) do
+      0 ->
+        log_success(project_id, :build, "✔ Docker image built")
+        {:ok, tag}
+
+      _ ->
+        {:error, "Docker build failed"}
+    end
+  end
+
+  defp await_port_completion(port, project_id, step) do
+    receive do
+      {^port, {:data, {:line, msg}}} ->
+        broadcast(project_id, :info, step, msg)
+        await_port_completion(port, project_id, step)
+
+      {^port, {:exit_status, status}} ->
+        status
     end
   end
 
   defp run_docker_container(project_id, image_tag) do
     container_name = "shiplio-container-#{project_id}"
 
-    log_info(project_id, :run, "🧹 Cleaning up existing containers")
+    log_info(project_id, :run, "Cleaning up existing containers")
     System.shell("docker rm -f #{container_name} > /dev/null 2>&1")
 
     log_info(project_id, :run, "🚀 Booting container")
@@ -160,7 +169,6 @@ defmodule Engine.Deployments.BuildWorker do
     end
   end
 
-
   defp log_info(project_id, step, msg),
     do: broadcast(project_id, :info, step, msg)
 
@@ -172,7 +180,7 @@ defmodule Engine.Deployments.BuildWorker do
 
   defp broadcast(project_id, level, step, msg) do
     event = %{
-      level: level,
+      level: Atom.to_string(level),
       step: step,
       message: msg,
       timestamp: DateTime.utc_now()

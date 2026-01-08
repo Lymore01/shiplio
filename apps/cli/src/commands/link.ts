@@ -1,9 +1,9 @@
 import ora from "ora";
 import inquirer from "inquirer";
 import chalk from "chalk";
-import { handleError } from "../utils/formatErrors";
-import { apiClient } from "../services/api";
-import { createShiplioConfig } from "../utils/config";
+import { handleError } from "../utils/formatErrors.js";
+import { apiClient } from "../services/api.js";
+import { createShiplioConfig } from "../utils/config.js";
 
 export async function link() {
   const spinner = ora("Fetching your projects from Shiplio...").start();

@@ -4,9 +4,11 @@ import { Command } from "commander";
 import { login, register } from "./commands/auth.js";
 import chalk from "chalk";
 import { init } from "./commands/init.js";
-import { link } from "./commands/link";
+import { link } from "./commands/link.js";
 import { status } from "./commands/status.js";
 import { whoami } from "./commands/whoami.js";
+import { pushEnv } from "./commands/env.js";
+import { deploy } from "./commands/deploy.js";
 
 const program = new Command();
 
@@ -29,6 +31,10 @@ program
   .command("status")
   .description("Get the status of your Shiplio project")
   .action(status);
+
+program.command("env:push").description("Push .env to Shiplio").action(pushEnv);
+
+program.command("deploy").description("Deploy your project").action(deploy);
 
 program.name("shiplio").description("Shiplio PaaS CLI").version("0.0.1");
 

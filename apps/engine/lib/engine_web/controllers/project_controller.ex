@@ -68,6 +68,9 @@ defmodule EngineWeb.ProjectController do
     end
   end
 
+  def set_env_vars(conn, %{"id" => project_id, "env_vars" => env_vars}) do
+  end
+
   def deploy(conn, %{"id" => project_id, "file" => %Plug.Upload{path: tmp_path}}) do
     root = Application.get_env(:engine, :uploads)[:root_path] || "uploads"
     user = Guardian.Plug.current_resource(conn)

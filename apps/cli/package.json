@@ -22,16 +22,20 @@
     "axios": "^1.13.2",
     "chalk": "^5.6.2",
     "commander": "^14.0.2",
+    "dotenv": "^17.2.3",
     "form-data": "^4.0.5",
     "fs-extra": "^11.3.3",
     "ignore": "^7.0.5",
     "inquirer": "^13.1.0",
-    "ora": "^9.0.0"
+    "ora": "^9.0.0",
+    "phoenix": "^1.8.3",
+    "tar": "^7.5.2"
   },
   "devDependencies": {
     "@types/archiver": "^7.0.0",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^25.0.3",
+    "@types/phoenix": "^1.6.7",
     "rimraf": "^6.1.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
