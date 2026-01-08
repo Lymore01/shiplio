@@ -1,5 +1,5 @@
-import { apiClient } from "../services/api";
-import { handleError } from "../utils/formatErrors";
+import { apiClient } from "../services/api.js";
+import { handleError } from "../utils/formatErrors.js";
 import ora from "ora";
 import chalk from "chalk";
 

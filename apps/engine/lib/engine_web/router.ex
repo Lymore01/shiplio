@@ -27,6 +27,7 @@ defmodule EngineWeb.Router do
 
     get "/projects", ProjectController, :index
     get "/projects/:id", ProjectController, :show
+    post "/projects/:id/env_vars", ProjectController, :set_env_vars
     post "/projects", ProjectController, :create
 
     post "/projects/:id/deployments", ProjectController, :deploy

@@ -1,8 +1,8 @@
 import chalk from "chalk";
 import ora from "ora";
-import { apiClient } from "../services/api";
-import { handleError } from "../utils/formatErrors";
-import { readShiplioConfig } from "../utils/config";
+import { apiClient } from "../services/api.js";
+import { handleError } from "../utils/formatErrors.js";
+import { readShiplioConfig } from "../utils/config.js";
 
 export async function status() {
   const config = await readShiplioConfig();

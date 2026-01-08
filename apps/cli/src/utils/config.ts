@@ -3,9 +3,15 @@ import fs from "fs-extra";
 import path from "path";
 import { exec } from "child_process";
 import { promisify } from "util";
-import { detectStack } from "./detector";
+import { getProjectContext } from "./detector.js";
 
 const execAsync = promisify(exec);
+
+interface ShiplioConfig {
+  _warning: string;
+  name: string;
+  project_id: string;
+}
 
 export async function hasShiplioConfig(): Promise<boolean | false> {
   try {
@@ -26,7 +32,7 @@ const CONFIG_FILE_PATH = path.join(process.cwd(), ".shiplio", "config.json");
 export async function createShiplioConfig(name: string, project_id: string) {
   const comment =
     "This file is managed by Shiplio. Manual changes may break your link.";
-  const config = {
+  const config: ShiplioConfig = {
     _warning: comment,
     name,
     project_id,
@@ -52,7 +58,10 @@ export async function createShiplioConfig(name: string, project_id: string) {
   }
 }
 
-export async function readShiplioConfig() {
+export async function readShiplioConfig(): Promise<Omit<
+  ShiplioConfig,
+  "_warning"
+> | null> {
   try {
     if (!fs.existsSync(CONFIG_FILE_PATH)) {
       throw new Error("Shiplio config not found");
@@ -72,7 +81,7 @@ export async function createShiplioIgnoreFile() {
 
   if (await fs.pathExists(ignorePath)) return;
 
-  const stackIgnores = await detectStack();
+  const { ignoreList: stackIgnores } = await getProjectContext();
 
   const content = [
     "# Shiplio Ignore - prevents large/sensitive files from being uploaded",
@@ -83,4 +92,30 @@ export async function createShiplioIgnoreFile() {
   ].join("\n");
 
   await fs.writeFile(ignorePath, content);
+}
+
+export async function generateShiplioJson() {
+  const filePath = path.join(process.cwd(), "shiplio.json");
+
+  if (await fs.pathExists(filePath)) return;
+  const context = await getProjectContext();
+
+  const content = {
+    version: "1.0",
+    name: path.basename(process.cwd()),
+    stack: context.type,
+    package_manager: context.detectedPM,
+    build: {
+      command: context.defaultBuild,
+      output_dir: "dist",
+    },
+    runtime: {
+      start_command: context.defaultStart,
+      env: {
+        NODE_ENV: "production",
+      },
+    },
+  };
+
+  await fs.writeJson(filePath, content, { spaces: 2 });
 }
