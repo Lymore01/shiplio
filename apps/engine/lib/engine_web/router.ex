@@ -20,6 +20,12 @@ defmodule EngineWeb.Router do
     post "/webhooks/github", WebhookController, :github
   end
 
+  scope "/", EngineWeb do
+    pipe_through [:browser, :auth]
+
+    get "/cli/auth", CliAuthController, :index
+  end
+
   scope "/api", EngineWeb do
     pipe_through [:api, :auth]
 

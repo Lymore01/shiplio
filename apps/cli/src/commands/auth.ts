@@ -8,6 +8,8 @@ import {
   logOut as logout,
 } from "../services/auth.js";
 import { handleError } from "../utils/formatErrors.js";
+import open from "open";
+import http from "http";
 
 const AUTH_PROMPTS = [
   {
@@ -90,4 +92,51 @@ export async function register() {
     handleError(error, "Registration failed");
     process.exit(1);
   }
+}
+
+// magic-link flow
+export async function loginViaWeb() {
+  const PORT = 54321;
+  const SERVER_URL = "http://localhost:4000";
+  const callbackUrl = `http://localhost:${PORT}`;
+
+  const authUrl = `${SERVER_URL}/cli/auth?callbackUrl=${encodeURIComponent(
+    callbackUrl
+  )}`;
+
+  const server = http.createServer(async (req, res) => {
+    const url = new URL(req.url!, `http://localhost:${PORT}`);
+    const token = url.searchParams.get("token");
+
+    if (token) {
+      await saveToken(token);
+
+      res.writeHead(200, { "Content-Type": "text/html" });
+      res.end(`
+        <html>
+          <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
+            <h1 style="color: #2ecc71;">Authenticated!</h1>
+            <p>You can close this window and return to your terminal.</p>
+          </body>
+        </html>
+      `);
+
+      console.log(chalk.green("\nSuccessfully logged in!"));
+
+      res.socket?.destroy();
+      server.close(() => {
+        process.exit(0);
+      });
+    } else {
+      res.writeHead(400);
+      res.end("Invalid request");
+    }
+  });
+
+  server.listen(PORT, async () => {
+    console.log(chalk.cyan("Opening your browser to authenticate..."));
+    console.log(chalk.dim(`If the browser doesn't open, visit: ${authUrl}`));
+
+    await open(authUrl);
+  });
 }
