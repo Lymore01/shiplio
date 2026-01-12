@@ -41,7 +41,7 @@ defmodule Engine.Deployments.BuildWorker do
   defp extract_source(state) do
     abs_archive_path = Path.expand(state.path)
     build_dir = Path.dirname(abs_archive_path)
-    archive_file = Path.basename(abs_archive_path)
+    _archive_file = Path.basename(abs_archive_path)
 
     log_info(state.project_id, :extract, "📦 Extracting source code...")
 
@@ -195,12 +195,12 @@ defmodule Engine.Deployments.BuildWorker do
     IO.puts("[#{level}] #{msg}")
   end
 
-  defp log_stream(project_id, step) do
-    %Engine.Deployments.LogCollector{
-      project_id: project_id,
-      step: step
-    }
-  end
+  # defp log_stream(project_id, step) do
+  #   %Engine.Deployments.LogCollector{
+  #     project_id: project_id,
+  #     step: step
+  #   }
+  # end
 
   defp normalize_encoding(path) do
     content =
