@@ -2,14 +2,18 @@ defmodule EngineWeb.AuthController do
   use EngineWeb, :controller
   alias Engine.Accounts
 
-  def login(conn, %{"email" => email, "password" => password}) do
+  def login(conn, %{"email" => email, "password" => password, "callback" => cb}) do
     case Accounts.authenticate_user(email, password) do
       {:ok, user} ->
-        {:ok, token} = EngineWeb.Auth.Guardian.create_token(user)
-        json(conn, %{token: token, user: %{email: user.email}})
+        conn
+        |> put_session(:user_id, user.id)
+        |> configure_session(renew: true)
+        |> redirect(to: ~p"/cli/auth?callback=#{cb}")
 
-      {:error, :unauthorized} ->
-        conn |> put_status(401) |> json(%{error: "Invalid credentials"})
+      {:error, _} ->
+        conn
+        |> put_flash(:error, "Invalid credentials")
+        |> render(:new, callback: cb)
     end
   end
 

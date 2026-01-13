@@ -39,7 +39,7 @@ defmodule EngineWeb do
     quote do
       use Phoenix.Controller,
         formats: [:html, :json],
-        layouts: [html: EngineWeb.Layouts]
+        layouts: [html: false]
 
       use Gettext, backend: EngineWeb.Gettext
 
@@ -55,6 +55,37 @@ defmodule EngineWeb do
         endpoint: EngineWeb.Endpoint,
         router: EngineWeb.Router,
         statics: EngineWeb.static_paths()
+    end
+  end
+
+  def html do
+    quote do
+      use Phoenix.Component
+
+      # Import convenience functions from controllers
+      import Phoenix.Controller,
+        only: [get_csrf_token: 0, view_module: 1, view_template: 1]
+
+      # Include general helpers for rendering HTML
+      unquote(html_helpers())
+    end
+  end
+
+  # lib/engine_web.ex
+
+  defp html_helpers do
+    quote do
+      import Phoenix.HTML
+      import Phoenix.HTML.Form
+      # This provides the form helpers like text_input, etc.
+      use PhoenixHTMLHelpers
+
+      # Shortcut for generating JS commands
+      alias Phoenix.LiveView.JS
+
+      # Routes generation path helpers
+      use Gettext, backend: EngineWeb.Gettext
+      unquote(verified_routes())
     end
   end
 

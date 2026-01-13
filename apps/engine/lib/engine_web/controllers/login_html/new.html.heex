@@ -1,0 +1,184 @@
+<div class="auth-container">
+
+<%= if flash = Phoenix.Flash.get(@flash, :error) do %>
+    <div class="flash-error">
+      <%= flash %>
+    </div>
+  <% end %>
+
+  <%= if flash = Phoenix.Flash.get(@flash, :info) do %>
+    <div class="flash-info">
+      <%= flash %>
+    </div>
+  <% end %>
+
+  <h1>Authorize Shiplio</h1>
+  <p>Sign in to allow the CLI to manage your deployments</p>
+
+  <.form :let={_f} for={%{}} action={~p"/login"} method="post">
+    <input type="hidden" name="callback" value={@callback} />
+
+    <div class="field">
+      <label>Email</label>
+      <input
+        type="email"
+        name="email"
+        required
+        placeholder="you@example.com"
+        autocomplete="email"
+      />
+    </div>
+
+    <div class="field">
+      <label>Password</label>
+      <input
+        type="password"
+        name="password"
+        required
+        autocomplete="current-password"
+      />
+    </div>
+
+    <button type="submit">Sign in & Authorize</button>
+  </.form>
+
+  <div class="footer">
+    <p>Not you? <a href="/">Return to dashboard</a></p>
+  </div>
+</div>
+
+<style>
+  :root {
+    --bg: #0b0b0b;
+    --panel: #111;
+    --border: #1f1f1f;
+    --text: #f5f5f5;
+    --muted: #9a9a9a;
+    --input: #141414;
+    --focus: #ffffff;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .flash-error { 
+    padding: 12px; 
+    background-color: #fee2e2; 
+    color: #b91c1c; 
+    border: 1px solid #fecaca; 
+    border-radius: 4px; 
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+  }
+  .flash-info { 
+    padding: 12px; 
+    background-color: #dcfce7; 
+    color: #15803d; 
+    border: 1px solid #bbf7d0; 
+    border-radius: 4px; 
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+  }
+
+  .auth-container {
+    max-width: 420px;
+    margin: 12vh auto;
+    padding: 2.5rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", Roboto, sans-serif;
+  }
+
+  h1 {
+    margin-bottom: 0.4rem;
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  p {
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .field {
+    margin-bottom: 1.4rem;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--input);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.95rem;
+    transition: border 0.2s ease, background 0.2s ease;
+  }
+
+  input::placeholder {
+    color: #666;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: var(--focus);
+    background: #0f0f0f;
+  }
+
+  button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 0.5rem;
+    background: #ffffff;
+    color: #000000;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s ease, opacity 0.15s ease;
+  }
+
+  button:hover {
+    opacity: 0.92;
+  }
+
+  button:active {
+    transform: scale(0.98);
+  }
+
+  .footer {
+    margin-top: 2rem;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .footer a {
+    color: #ffffff;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border 0.15s ease;
+  }
+
+  .footer a:hover {
+    border-bottom-color: #ffffff;
+  }
+</style>
