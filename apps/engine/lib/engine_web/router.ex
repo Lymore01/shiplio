@@ -10,6 +10,13 @@ defmodule EngineWeb.Router do
     plug Guardian.Plug.EnsureAuthenticated
   end
 
+  pipeline :browser do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_flash
+    plug :put_secure_browser_headers
+end
+
   scope "/api", EngineWeb do
     pipe_through :api
 
@@ -18,6 +25,12 @@ defmodule EngineWeb.Router do
     get "/auth/callback", AuthController, :callback
 
     post "/webhooks/github", WebhookController, :github
+  end
+
+  scope "/", EngineWeb do
+    pipe_through :browser
+
+    get "/cli/auth", CliAuthController, :index
   end
 
   scope "/api", EngineWeb do

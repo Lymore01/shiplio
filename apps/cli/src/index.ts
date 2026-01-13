@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { login, register } from "./commands/auth.js";
+import { login, loginViaWeb, register } from "./commands/auth.js";
 import chalk from "chalk";
 import { init } from "./commands/init.js";
 import { link } from "./commands/link.js";
@@ -38,7 +38,11 @@ program.command("deploy").description("Deploy your project").action(deploy);
 
 program.name("shiplio").description("Shiplio PaaS CLI").version("0.0.1");
 
-program.command("login").description("Login to Shiplio account").action(login);
+// program.command("login").description("Login to Shiplio account").action(login);
+program
+  .command("login")
+  .description("Login to Shiplio account")
+  .action(loginViaWeb);
 
 program
   .command("register")
