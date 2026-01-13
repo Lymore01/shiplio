@@ -14,8 +14,27 @@ defmodule EngineWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_flash
+    plug EngineWeb.Plugs.FetchCurrentUser
+    # plug :put_root_layout, html: {EngineWeb.Layouts, :root}
     plug :put_secure_browser_headers
-end
+  end
+
+  pipeline :browser_no_csrf do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_flash
+    plug :put_secure_browser_headers
+  end
+
+  scope "/", EngineWeb do
+    pipe_through :browser
+
+    get "/cli/auth", CliAuthController, :index
+    get "/login", LoginController, :new
+
+    pipe_through :browser_no_csrf
+    post "/login", LoginController, :create
+  end
 
   scope "/api", EngineWeb do
     pipe_through :api
@@ -25,12 +44,6 @@ end
     get "/auth/callback", AuthController, :callback
 
     post "/webhooks/github", WebhookController, :github
-  end
-
-  scope "/", EngineWeb do
-    pipe_through :browser
-
-    get "/cli/auth", CliAuthController, :index
   end
 
   scope "/api", EngineWeb do
@@ -44,7 +57,6 @@ end
     post "/projects", ProjectController, :create
 
     post "/projects/:id/deployments", ProjectController, :deploy
-
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
