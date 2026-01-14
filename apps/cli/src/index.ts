@@ -44,10 +44,10 @@ program
   .description("Login to Shiplio account")
   .action(loginViaWeb);
 
-program
-  .command("register")
-  .description("Register to Shiplio account")
-  .action(register);
+// program
+//   .command("register")
+//   .description("Register to Shiplio account")
+//   .action(register);
 
 program
   .command("ping")

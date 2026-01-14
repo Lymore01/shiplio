@@ -1,13 +1,13 @@
 defmodule EngineWeb.CliAuthController do
   use EngineWeb, :controller
 
-  def index(conn, _params) do
+  def index(conn, %{"callback" => callback_url}) do
     user = Map.get(conn.assigns, :current_user)
 
     if user do
       {:ok, token} = EngineWeb.Auth.Guardian.create_token(user)
 
-      redirect(conn, external: "#{"/cli/auth"}?token=#{token}")
+      redirect(conn, external: "#{callback_url}?token=#{token}")
     else
       put_flash(conn, :info, "You are not logged in.")
       redirect(conn, external: "#{"/login"}")

@@ -20,7 +20,8 @@ defmodule EngineWeb.LoginController do
 
       {:error, _} ->
         conn
-        |> put_flash(:error, "Invalid credentials")
+        |> put_flash(:error, "Invalid credentials!")
+        |> put_layout(false)
         |> render(:new, callback: cb)
 
     end

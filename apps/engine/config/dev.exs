@@ -22,7 +22,7 @@ config :engine, EngineWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4000],
   check_origin: false,
   code_reloader: true,
-  debug_errors: true,
+  debug_errors: false,
   secret_key_base: "bgyCrGxU0fPGI3g19H8JzT/sZ5674LfA+7FQBfzzjPKGY47oKGqvXOsHlmRiEMHE",
   watchers: []
 
