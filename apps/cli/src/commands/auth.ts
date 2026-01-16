@@ -33,6 +33,7 @@ const AUTH_PROMPTS = [
   },
 ];
 
+// legacy
 export async function login() {
   const existingToken = getToken();
   if (existingToken) {
@@ -73,6 +74,7 @@ export async function login() {
   }
 }
 
+// Legacy
 export async function register() {
   console.log(chalk.cyan("\nCreate a new Shiplio account"));
 

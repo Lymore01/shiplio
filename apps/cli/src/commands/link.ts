@@ -35,7 +35,7 @@ export async function link() {
       })),
     });
 
-    const configSpinner = ora(`Linking to ${selectedProject.name}...`).start();
+    const configSpinner = ora(`Linking to ${selectedProject.name}...\n`).start();
 
     await createShiplioConfig(selectedProject.name, selectedProject.id);
 
@@ -45,6 +45,7 @@ export async function link() {
     console.log(
       chalk.dim('You can now run "shiplio status" or "shiplio deploy".')
     );
+    
   } catch (error) {
     spinner.stop();
     handleError(error, "Linking Failed");

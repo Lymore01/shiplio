@@ -1,7 +1,6 @@
 import { apiClient } from "../services/api.js";
 import { handleError } from "../utils/formatErrors.js";
 import ora from "ora";
-import chalk from "chalk";
 
 export async function whoami() {
   try {
