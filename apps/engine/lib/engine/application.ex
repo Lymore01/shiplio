@@ -7,6 +7,8 @@ defmodule Engine.Application do
 
   @impl true
   def start(_type, _args) do
+
+    Engine.Deployments.LogBuffer.init_table()
     children = [
       EngineWeb.Telemetry,
       Engine.Repo,

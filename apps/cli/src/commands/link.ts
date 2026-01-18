@@ -3,7 +3,7 @@ import inquirer from "inquirer";
 import chalk from "chalk";
 import { handleError } from "../utils/formatErrors.js";
 import { apiClient } from "../services/api.js";
-import { createShiplioConfig } from "../utils/config.js";
+import { createShiplioConfig, generateShiplioJson } from "../utils/config.js";
 
 export async function link() {
   const spinner = ora("Fetching your projects from Shiplio...").start();
@@ -38,6 +38,8 @@ export async function link() {
     const configSpinner = ora(`Linking to ${selectedProject.name}...\n`).start();
 
     await createShiplioConfig(selectedProject.name, selectedProject.id);
+
+    await generateShiplioJson(selectedProject.name)
 
     configSpinner.succeed(
       chalk.green(`Successfully linked to ${selectedProject.name}!`)

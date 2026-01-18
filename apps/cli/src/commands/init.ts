@@ -47,7 +47,7 @@ export async function init(projectName: string) {
     }
 
     const spinner = ora(
-      `Initializing ${chalk.cyan(projectName)} on Shiplio...`
+      `Initializing ${chalk.cyan(projectName)} on Shiplio...\n`
     ).start();
 
     const { data: response } = await apiClient.post("/projects", {
@@ -61,7 +61,7 @@ export async function init(projectName: string) {
 
     await createShiplioIgnoreFile();
 
-    await generateShiplioJson();
+    await generateShiplioJson(projectName);
 
     spinner.succeed(chalk.green("Project initialized successfully!"));
 

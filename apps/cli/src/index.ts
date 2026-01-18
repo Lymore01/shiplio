@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { login, loginViaWeb, register } from "./commands/auth.js";
+import { loginViaWeb, register } from "./commands/auth.js";
 import chalk from "chalk";
 import { init } from "./commands/init.js";
 import { link } from "./commands/link.js";

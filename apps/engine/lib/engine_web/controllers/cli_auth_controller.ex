@@ -10,7 +10,7 @@ defmodule EngineWeb.CliAuthController do
       redirect(conn, external: "#{callback_url}?token=#{token}")
     else
       put_flash(conn, :info, "You are not logged in.")
-      redirect(conn, external: "#{"/login"}")
+      redirect(conn, external: "/login?callback=#{callback_url}")
     end
   end
 end

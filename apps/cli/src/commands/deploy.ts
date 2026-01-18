@@ -21,14 +21,15 @@ export async function deploy() {
 
   if (!config) {
     console.log(
-      chalk.red("✖ No Shiplio project found. Run 'shiplio init' first.")
+      chalk.red("✖ No Shiplio project found. Run 'shiplio init' first."),
     );
     return;
   }
 
-  const spinner = ora(`Deploying your project ${config.name}...\n`).start();
+  const spinner = ora(`Deploying project...\n`).start();
 
   try {
+    const channelPromise = connectToDeploymentLogs();
     const stream = fs.createReadStream(archivePath);
 
     const filename = `upload-${Date.now()}.tar.gz`;
@@ -39,7 +40,7 @@ export async function deploy() {
       contentType: "application/gzip",
     });
 
-    spinner.text = "Uploading to Shiplio...";
+    spinner.text = "Uploading to Shiplio...\n";
 
     await apiClient.post(`/projects/${config.project_id}/deployments`, form, {
       headers: form.getHeaders(),
@@ -47,13 +48,13 @@ export async function deploy() {
       maxBodyLength: Infinity,
     });
 
-    spinner.succeed(chalk.green("Upload complete!"));
-
-    console.log(chalk.dim("--- Remote Build Started ---"));
-    const channel = await connectToDeploymentLogs();
+    console.log(chalk.dim("--- Remote Build Started ---\n"));
+    const channel = await channelPromise;
 
     channel.on("new_log", (payload: Payload) => {
       const { level, message } = payload;
+
+      spinner.stop();
 
       const colors: Record<string, any> = {
         info: chalk.blue,
@@ -65,7 +66,15 @@ export async function deploy() {
       const colorize = colors[level] || chalk.white;
       const prefix = colorize(`[${level}]`);
 
-      process.stdout.write(`${prefix} ${message.trim()}\n`);
+      console.log(`${prefix} ${message.trim()}`);
+
+      if (message.includes("successful") || message.includes("failed")) {
+        if (message.includes("successful")) process.exit(0);
+        if (message.includes("failed")) process.exit(1);
+      } else {
+        spinner.text = chalk.dim(`Remote: ${message.trim()}`);
+        spinner.start();
+      }
     });
 
     // channel.on("status_change", (payload: { status: string }) => {

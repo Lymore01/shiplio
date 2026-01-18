@@ -35,7 +35,14 @@ defmodule Engine.Deployments.BuildWorker do
         log_error(state.project_id, :done, "Deployment failed: #{reason}")
     end
 
+    Engine.Deployments.LogBuffer.clear_logs_delayed(state.project_id)
+
     {:stop, :normal, state}
+  end
+
+  def handle_info({:clear_buffer, project_id}, state) do
+    Engine.Deployments.LogBuffer.clear_logs(project_id)
+    {:noreply, state}
   end
 
   defp extract_source(state) do
@@ -186,11 +193,9 @@ defmodule Engine.Deployments.BuildWorker do
       timestamp: DateTime.utc_now()
     }
 
-    Phoenix.PubSub.broadcast(
-      Engine.PubSub,
-      "logs:#{project_id}",
-      {:new_log, event}
-    )
+    Engine.Deployments.LogBuffer.add_log(project_id, event)
+
+    EngineWeb.Endpoint.broadcast("logs:#{project_id}", "new_log", event)
 
     IO.puts("[#{level}] #{msg}")
   end

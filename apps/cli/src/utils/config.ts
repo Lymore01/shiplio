@@ -94,7 +94,7 @@ export async function createShiplioIgnoreFile() {
   await fs.writeFile(ignorePath, content);
 }
 
-export async function generateShiplioJson() {
+export async function generateShiplioJson(projectName?: string) {
   const filePath = path.join(process.cwd(), "shiplio.json");
 
   if (await fs.pathExists(filePath)) return;
@@ -102,7 +102,7 @@ export async function generateShiplioJson() {
 
   const content = {
     version: "1.0",
-    name: path.basename(process.cwd()),
+    name: projectName ?? path.basename(process.cwd()),
     stack: context.type,
     package_manager: context.detectedPM,
     build: {
