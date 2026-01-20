@@ -1,104 +1,63 @@
 # Shiplio
 
-**Shiplio** is a high-performance PaaS (Platform as a Service) designed for developers who value speed and a refined terminal experience. It consists of a robust Elixir/Phoenix backend and a specialized Node.js CLI.
+**Shiplio** is a high-performance PaaS (Platform as a Service) built for developers who crave a refined terminal experience and rapid deployment cycles. By combining a robust **Elixir/Phoenix** engine with a modern **Node.js** CLI, Shiplio automates the journey from local source code to live Docker containers.
 
 ---
 
-## Features
+## Preview
 
-* **Unified Auth Flow:** Secure browser-based authentication that bridges the web and terminal.
-* **JWT Security:** Powered by Guardian for stateless, secure token management.
+### The Core Workflow
+![The Shiplio deployment workflow from login to successful build](assets/progress_screens/screen_1.png)
+*A seamless flow showing browser-based authentication, project initialization, and a real-time Docker build stream directly in your terminal.*
 
----
+### Secure Authentication (Opened automatically after running `shiplio login` )
+![Browser-based authorization screen for the Shiplio CLI](assets/progress_screens/screen_4.png)
+*A secure "Local Loopback" auth pattern that bridges your terminal to a web-based login, ensuring credentials remain encrypted and secure.*
 
-## Architecture & Auth Flow
+### After Successful Login
+![Success page after successfully login in](assets/progress_screens/screen_5.png)
+*Once authorized, the Auth Bridge securely transmits the JWT back to your local CLI server, automatically closing the loop and readying your environment for immediate deployment*
 
-Shiplio uses a "Local Loopback" authentication pattern to ensure your credentials never touch the terminal directly in plain text.
+### Project Insights & Linking
+![The Shiplio CLI dashboard and project linking process](assets/progress_screens/screen_2.png)
+*Use the CLI to link existing directories to your Shiplio account and view rich metadata, including deployment status and live URLs, using a structured TUI.*
 
+*Note: We are currently transitioning from localhost port mapping to a custom sub-domain system (e.g., example.shiplio.com) via an integrated reverse proxy.*
 
-
-1.  **Initiation:** `shiplio login` starts a temporary local server on a random port.
-2.  **Handshake:** The CLI opens the browser to the **Auth Bridge** (`/cli/auth`).
-3.  **Verification:** User signs in via a secure HEEx-templated form.
-4.  **Completion:** The Bridge redirects the user to the local CLI server with a JWT.
-5.  **Persistence:** The CLI stores the JWT for all subsequent deployment commands.
-
----
-
-## Getting Started
-
-### Backend Setup (Engine)
-The engine is the heart of Shiplio, handling the database, user sessions, and deployment logic.
-
-1.  **Install dependencies:**
-    ```bash
-    cd apps/engine
-    mix deps.get
-    ```
-2.  **Configure Database:** Update `config/dev.exs` with your PostgreSQL credentials.
-3.  **Setup Database:**
-    ```bash
-    mix ecto.setup
-    ```
-4.  **Start Server:**
-    ```bash
-    mix phx.server
-    ```
-
-### CLI Setup
-The CLI is the primary interface for managing your Shiplio services.
-
-1.  **Install & Link:**
-    ```bash
-    cd cli
-    pnpm install
-    pnpm link
-    ```
-2.  **Login:**
-    ```bash
-    shiplio login
-    ```
+### Live Deployments
+![A web browser displaying a successful "Hello World" from a Node.js container](assets/progress_screens/screen_3.png)
+*The end result: your application running inside a Docker container, accessible via a dynamically assigned local port.*
 
 ---
 
-## Command Reference
+## Quick Start
 
-### Authentication
+### Engine (Backend)
+```bash
+cd apps/engine
+mix deps.get && mix ecto.setup
+mix phx.server
+```
 
-| Command | Description |
-|--------|------------|
-| `shiplio login` | Opens the browser to authenticate your local machine via the Auth Bridge. |
-| `shiplio logout` | Removes the local JWT token and terminates the session. |
-| `shiplio whoami` | Displays the email and account details of the currently authenticated user. |
-
-### App Management
-
-| Command | Description |
-|--------|------------|
-| `shiplio init` | Initializes a new Shiplio project configuration in the current directory. |
-| `shiplio deploy` | Bundles and pushes the current project to the Shiplio cloud. |
-| `shiplio apps` | Lists all active applications and their current deployment status. |
-| `shiplio destroy` | Permanently removes an application and its associated resources. |
-
-### Observability
-
-| Command | Description |
-|--------|------------|
-| `shiplio logs` | Streams real-time stdout/stderr logs from your running application. |
-| `shiplio status` | Shows health metrics, uptime, and resource usage for an app. |
-
-### Configuration
-
-| Command | Description |
-|--------|------------|
-| `shiplio env:set` | Sets an environment variable or secret for the application. |
-| `shiplio env:list` | Lists all environment variables configured for the current app. |
-| `shiplio help` | Displays detailed usage information for all available commands. |
-
+### CLI
+```bash
+cd apps/cli
+pnpm install && pnpm link --global
+shiplio login
+```
 
 ---
+
+## Commands
+
+- `shiplio login` / `logout` - Manage authentication.
+- `shiplio init` - Initialize a new project.
+- `shiplio whoami` - Displays account details for the currently authenticated user.
+- `shiplio deploy` - Deploy to the cloud.
+- `shiplio status` - View app health and metrics.
+- `shiplio logs` - Stream application logs.
+- `shiplio link` - Connects a local directory to an existing project on your account.
 
 ## License
 
-Copyright © 2026 Shiplio.
-Licensed under the MIT License.
+MIT
