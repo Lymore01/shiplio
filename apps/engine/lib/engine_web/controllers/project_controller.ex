@@ -3,10 +3,10 @@ defmodule EngineWeb.ProjectController do
   alias Engine.Projects
   alias EngineWeb.Auth.Guardian
 
-  def create(conn, %{"name" => name}) do
+  def create(conn, %{"name" => name, "stack" => stack, "default_port" => default_port}) do
     user = Guardian.Plug.current_resource(conn)
 
-    case Projects.create_project(user, %{name: name}) do
+    case Projects.create_project(user, %{name: name, stack: stack, default_port: default_port}) do
       {:ok, project} ->
         conn
         |> put_status(:created)
@@ -41,6 +41,7 @@ defmodule EngineWeb.ProjectController do
             id: project.id,
             name: project.name,
             status: project.status,
+            url: project.local_url,
             inserted_at: project.inserted_at
           }
         end)
@@ -61,7 +62,9 @@ defmodule EngineWeb.ProjectController do
           data: %{
             id: project.id,
             name: project.name,
+            stack: project.stack,
             status: project.status,
+            url: project.local_url,
             inserted_at: project.inserted_at
           }
         })

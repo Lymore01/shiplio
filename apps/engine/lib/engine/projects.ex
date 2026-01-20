@@ -58,6 +58,21 @@ defmodule Engine.Projects do
   end
 
   @doc """
+  Updates the status of a project.
+  Returns {:ok, project} or {:error, changeset}.
+  """
+  def update_project_status(project_id, status, url \\ nil) do
+    project = Repo.get!(Project, project_id)
+
+    attrs = %{status: status}
+    attrs = if url, do: Map.put(attrs, :local_url, url), else: attrs
+
+    project
+    |> Project.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
   Checks if a project with the given ID exists and belongs to the specified user.
   """
   def exists_for_user?(project_id, user_id) do

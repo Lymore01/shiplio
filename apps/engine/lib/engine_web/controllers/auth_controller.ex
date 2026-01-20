@@ -35,7 +35,7 @@ defmodule EngineWeb.AuthController do
 
   def me(conn, _params) do
     user = Guardian.Plug.current_resource(conn)
-    json(conn, %{user: %{email: user.email}})
+    json(conn, %{user: %{email: user.email, id: user.id}})
   end
 
   def callback(conn, _params) do
