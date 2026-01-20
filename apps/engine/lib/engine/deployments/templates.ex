@@ -13,8 +13,20 @@ defmodule Engine.Deployments.Templates do
     case stack do
       "nextjs" -> nextjs_template(pm, build_cmd, start_cmd, port)
       "elixir" -> elixir_template(port)
+      "static" -> static_template(port)
       _ -> nodejs_template(pm, build_cmd, start_cmd, port)
     end
+  end
+
+  defp static_template(port) do
+    """
+    FROM nginx:alpine
+    # Remove default nginx static assets
+    RUN rm -rf /usr/share/nginx/html/*
+    # Copy static resources from the uploaded source to the nginx serve directory
+    COPY . /usr/share/nginx/html
+    EXPOSE #{port}
+    """
   end
 
   defp nodejs_template(pm, build_cmd, start_cmd, port) do

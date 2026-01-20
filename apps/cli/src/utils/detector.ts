@@ -1,7 +1,7 @@
 import fs from "fs-extra";
 import path from "path";
 
-type Stack = "nodejs" | "python" | "elixir" | "nextjs" | "unknown";
+type Stack = "nodejs" | "python" | "elixir" | "nextjs" | "static" | "unknown";
 
 interface StackInfo {
   version?: string;
@@ -45,6 +45,13 @@ const STACK_MAP: Record<Stack, Omit<StackInfo, "type">> = {
     defaultStart: "mix phx.server",
     ignoreList: ["deps", "_build", "erl_crash.dump"],
   },
+  static: {
+    label: "Static Site",
+    detectedPM: "unknown",
+    defaultBuild: "echo 'Static site detected. No build required.'",
+    defaultStart: "nginx -g 'daemon off;'",
+    ignoreList: [".git", ".vscode", ".github"],
+  },
   unknown: {
     label: "Generic",
     detectedPM: "unknown",
@@ -55,6 +62,7 @@ const STACK_MAP: Record<Stack, Omit<StackInfo, "type">> = {
 };
 
 const STACK_ANCHORS: Record<string, Stack> = {
+  "index.html": "static",
   "manage.py": "python",
   "requirements.txt": "python",
   "mix.exs": "elixir",
@@ -131,11 +139,15 @@ export async function getProjectContext(): Promise<StackInfo> {
 
   const baseConfig = STACK_MAP[detectedType];
 
+  const LikelyStaticPort =
+    detectedType === "static" ? 80 : await detectLikelyPort(root);
+
   return {
     version: "unknown",
     type: detectedType,
-    port: detectedPort,
+    port: LikelyStaticPort,
     ...baseConfig,
+    label: baseConfig.label,
   };
 }
 
@@ -158,6 +170,13 @@ export async function detectLikelyPort(projectDir: string): Promise<number> {
 
   if (fs.existsSync(path.join(projectDir, "package.json"))) {
     return await detectFromNode(projectDir);
+  }
+
+  if (
+    fs.existsSync(path.join(projectDir, "index.html")) &&
+    !fs.existsSync(path.join(projectDir, "package.json"))
+  ) {
+    return 80;
   }
 
   // for elixir
@@ -251,7 +270,6 @@ export async function detectFromElixir(dir: string): Promise<number> {
       if (match) return parseInt(match[1], 10);
     }
   }
-
 
   const libPath = path.join(dir, "lib");
   if (fs.existsSync(libPath)) {

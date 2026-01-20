@@ -24,12 +24,13 @@ defmodule Engine.Projects.Project do
     |> validate_format(:name, ~r/^[a-z0-9-]+$/)
     |> unique_constraint([:name, :user_id], name: :projects_user_id_name_index)
     |> validate_inclusion(:status, ["initialized", "building", "active", "failed", "stopped"])
+    |> validate_inclusion(:stack, ["nodejs", "python", "elixir", "nextjs", "static"])
   end
 
   defp slugify(name) when is_binary(name) do
     name
     |> String.downcase()
-    |> String.replace(~r/[^a-z0-9\s-]/, "")
+    |> String.replace(~r/[^a-z0-9\s-_]/, "")
     |> String.replace(~r/\s+/, "-")
     |> String.trim("-")
   end
