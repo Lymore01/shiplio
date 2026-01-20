@@ -29,7 +29,35 @@ export async function deploy() {
   const spinner = ora(`Deploying project...\n`).start();
 
   try {
-    const channelPromise = connectToDeploymentLogs();
+    const channel = await connectToDeploymentLogs();
+    
+    // @ts-ignore
+    channel.on("new_log", (payload: Payload) => {
+      const { level, message, step } = payload;
+
+      spinner.stop();
+
+      const colors: Record<string, any> = {
+        info: chalk.blue,
+        success: chalk.green,
+        error: chalk.red,
+        warn: chalk.yellow,
+      };
+
+      const colorize = colors[level] || chalk.white;
+      const prefix = colorize(`[${level}]`);
+
+      console.log(`${prefix} ${message.trim()}`);
+
+      if (step === "done") {
+        if (level === "success") process.exit(0);
+        else process.exit(1);
+      } else {
+        spinner.text = chalk.dim(`Remote: ${message.trim()}\n`);
+        spinner.start();
+      }
+    });
+
     const stream = fs.createReadStream(archivePath);
 
     const filename = `upload-${Date.now()}.tar.gz`;
@@ -48,34 +76,7 @@ export async function deploy() {
       maxBodyLength: Infinity,
     });
 
-    console.log(chalk.dim("--- Remote Build Started ---\n"));
-    const channel = await channelPromise;
-
-    channel.on("new_log", (payload: Payload) => {
-      const { level, message } = payload;
-
-      spinner.stop();
-
-      const colors: Record<string, any> = {
-        info: chalk.blue,
-        success: chalk.green,
-        error: chalk.red,
-        warn: chalk.yellow,
-      };
-
-      const colorize = colors[level] || chalk.white;
-      const prefix = colorize(`[${level}]`);
-
-      console.log(`${prefix} ${message.trim()}`);
-
-      if (message.includes("successful") || message.includes("failed")) {
-        if (message.includes("successful")) process.exit(0);
-        if (message.includes("failed")) process.exit(1);
-      } else {
-        spinner.text = chalk.dim(`Remote: ${message.trim()}`);
-        spinner.start();
-      }
-    });
+    console.log(chalk.dim("--- Remote Build Started ---"));
 
     // channel.on("status_change", (payload: { status: string }) => {
     //   if (payload.status === "success") {

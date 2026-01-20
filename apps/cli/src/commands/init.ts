@@ -22,13 +22,15 @@ export async function init(projectName: string) {
   try {
     const context = await getProjectContext();
     console.log(
-      `${chalk.green("✔")} Detected ${chalk.bold(context.label)} stack.`
+      `${chalk.green("✔")} Detected ${chalk.bold(context.label)} stack.`,
     );
 
     const configExists = await hasShiplioConfig();
     if (configExists) {
       console.log(
-        chalk.yellow("ℹ Shiplio project already initialized in this directory.")
+        chalk.yellow(
+          "ℹ Shiplio project already initialized in this directory.",
+        ),
       );
       return;
     }
@@ -46,13 +48,23 @@ export async function init(projectName: string) {
       projectName = inputName;
     }
 
+    const { port } = await inquirer.prompt([
+      {
+        type: "number",
+        name: "port",
+        message: "Which port does your app run on?",
+        default: context.port,
+      },
+    ]);
+
     const spinner = ora(
-      `Initializing ${chalk.cyan(projectName)} on Shiplio...\n`
+      `Initializing ${chalk.cyan(projectName)} on Shiplio...\n`,
     ).start();
 
     const { data: response } = await apiClient.post("/projects", {
       name: projectName,
       stack: context.type,
+      default_port: port,
     });
 
     const project = response.data;
@@ -61,20 +73,28 @@ export async function init(projectName: string) {
 
     await createShiplioIgnoreFile();
 
-    await generateShiplioJson(projectName);
+    await generateShiplioJson({
+      version: context.version,
+      name: projectName,
+      project_id: project.id,
+      port: port,
+      stack: context.type,
+      build_command: context.defaultBuild,
+      start_command: context.defaultStart,
+    });
 
     spinner.succeed(chalk.green("Project initialized successfully!"));
 
     console.log(`\n${chalk.bold("Next Steps:")}`);
     console.log(
       `${chalk.dim("1.")} Review ${chalk.cyan(
-        "shiplio.json"
-      )} to confirm your build commands.`
+        "shiplio.json",
+      )} to confirm your build commands.`,
     );
     console.log(
       `${chalk.dim("2.")} Run ${chalk.bold.blue(
-        "shiplio deploy"
-      )} to start your first build.\n`
+        "shiplio deploy",
+      )} to start your first build.\n`,
     );
   } catch (error: any) {
     if (error?.response?.status === 401) {
