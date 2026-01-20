@@ -94,28 +94,23 @@ export async function createShiplioIgnoreFile() {
   await fs.writeFile(ignorePath, content);
 }
 
-export async function generateShiplioJson(projectName?: string) {
-  const filePath = path.join(process.cwd(), "shiplio.json");
-
-  if (await fs.pathExists(filePath)) return;
-  const context = await getProjectContext();
-
+export async function generateShiplioJson(config: any) {
   const content = {
-    version: "1.0",
-    name: projectName ?? path.basename(process.cwd()),
-    stack: context.type,
-    package_manager: context.detectedPM,
+    version: config.version,
+    name: config.name,
+    project_id: config.project_id,
+    stack: config.stack,
     build: {
-      command: context.defaultBuild,
-      output_dir: "dist",
+      command: config.build_command || "",
     },
     runtime: {
-      start_command: context.defaultStart,
+      start_command: config.start_command,
+      port: config.port,
       env: {
-        NODE_ENV: "production",
-      },
-    },
+        NODE_ENV: "production"
+      }
+    }
   };
 
-  await fs.writeJson(filePath, content, { spaces: 2 });
+  await fs.writeJson(path.join(process.cwd(), "shiplio.json"), content, { spaces: 2 });
 }

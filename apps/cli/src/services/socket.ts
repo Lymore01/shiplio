@@ -15,11 +15,14 @@ export async function connectToDeploymentLogs() {
 
   const channel = socket.channel(`logs:${config?.project_id}`, {});
 
-  channel
-    .join()
-    .receive("error", (resp) =>
-      process.stdout.write(`${chalk.red('[ERROR]')} Unable to join`, resp),
-    );
-
-  return channel;
+  return new Promise((resolve, reject) => {
+    channel
+      .join()
+      .receive("ok", () => resolve(channel))
+      .receive("error", (resp) => {
+        process.stdout.write(`${chalk.red('[ERROR]')} Unable to join`, resp);
+        reject(resp);
+      })
+      .receive("timeout", () => reject("Connection timeout"));
+  });
 }
