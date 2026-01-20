@@ -4,6 +4,7 @@ import Table from "cli-table3";
 import { apiClient } from "../services/api.js";
 import { handleError } from "../utils/formatErrors.js";
 import { readShiplioConfig } from "../utils/config.js";
+import { formatTerminalDate } from "../utils/formatTerminalDate.js";
 
 export async function status() {
   const config = await readShiplioConfig();
@@ -65,9 +66,7 @@ export async function status() {
     }
 
     table.push({
-      [chalk.bold("Last Update")]: new Date(
-        project.updated_at,
-      ).toLocaleString(),
+      [chalk.bold("Last Update")]: formatTerminalDate(project.updated_at),
     });
 
     console.log(`\n${chalk.bold.cyan("PROJECT INSIGHTS")}`);
@@ -80,7 +79,7 @@ export async function status() {
         ),
       );
     } else if (project.status === "active") {
-      console.log(chalk.green(`🚀 Your API is live and ready for requests.\n`));
+      console.log(chalk.green(`🚀 Your Project is live and ready for requests.\n`));
     }
   } catch (error: any) {
     spinner.stop();

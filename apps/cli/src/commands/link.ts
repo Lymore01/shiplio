@@ -4,8 +4,11 @@ import chalk from "chalk";
 import { handleError } from "../utils/formatErrors.js";
 import { apiClient } from "../services/api.js";
 import { createShiplioConfig, generateShiplioJson } from "../utils/config.js";
+import { getProjectContext } from "../utils/detector.js";
 
 export async function link() {
+  const context = await getProjectContext();
+
   const spinner = ora("Fetching your projects from Shiplio...").start();
   try {
     const { data: axiosResponse } = await apiClient.get("/projects");
@@ -19,8 +22,8 @@ export async function link() {
     if (projects.length === 0) {
       console.log(
         chalk.yellow(
-          '? You don\'t have any projects yet. Run "shiplio init" to create one.'
-        )
+          '? You don\'t have any projects yet. Run "shiplio init" to create one.',
+        ),
       );
       return;
     }
@@ -35,19 +38,28 @@ export async function link() {
       })),
     });
 
-    const configSpinner = ora(`Linking to ${selectedProject.name}...\n`).start();
+    const configSpinner = ora(
+      `Linking to ${selectedProject.name}...\n`,
+    ).start();
 
     await createShiplioConfig(selectedProject.name, selectedProject.id);
 
-    await generateShiplioJson(selectedProject.name)
+    await generateShiplioJson({
+      version: context.version,
+      name: selectedProject.name,
+      project_id: selectedProject.id,
+      port: selectedProject.default_port,
+      stack: context.type,
+      build_command: context.defaultBuild,
+      start_command: context.defaultStart,
+    });
 
     configSpinner.succeed(
-      chalk.green(`Successfully linked to ${selectedProject.name}!`)
+      chalk.green(`Successfully linked to ${selectedProject.name}!`),
     );
     console.log(
-      chalk.dim('You can now run "shiplio status" or "shiplio deploy".')
+      chalk.dim('You can now run "shiplio status" or "shiplio deploy".'),
     );
-    
   } catch (error) {
     spinner.stop();
     handleError(error, "Linking Failed");
