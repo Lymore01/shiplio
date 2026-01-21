@@ -29,10 +29,17 @@ defmodule Engine.Deployments.BuildWorker do
     File.rm_rf!(workspace_dir)
 
     case result do
-      {:ok, port} ->
+      {:ok, port, container_id} ->
         url = "http://localhost:#{port}"
-        Engine.Projects.update_project_status(state.project_id, "active", url)
-        log_success(state.project_id, :done, "✅ Deployment successful!")
+
+        Engine.Projects.update_project_by_id(state.project_id, %{
+          status: "active",
+          local_url: url,
+          container_id: container_id
+        })
+
+        EngineWeb.Endpoint.broadcast("logs:#{state.project_id}", "build_complete", %{url: url})
+        # log_success(state.project_id, :done, "✅ Deployment successful!")
 
       {:error, reason} ->
         log_error(state.project_id, :done, "Deployment failed: #{reason}")
@@ -116,7 +123,16 @@ defmodule Engine.Deployments.BuildWorker do
       Port.open(
         {:spawn_executable, exe},
         [
-          {:args, ["build", "-t", tag, context_dir]},
+          {:args,
+           [
+             "build",
+             "--progress=plain",
+             "--provenance=false",
+             "--attest=type=sbom,disabled=true",
+             "-t",
+             tag,
+             context_dir
+           ]},
           :binary,
           :exit_status,
           :stderr_to_stdout,
@@ -138,8 +154,15 @@ defmodule Engine.Deployments.BuildWorker do
   defp await_port_completion(port, project_id, step, timeout \\ 300_000) do
     receive do
       {^port, {:data, {:line, msg}}} ->
-        clean_msg = String.replace(msg, ~r/\e\[[0-9;]*m/, "")
-        broadcast(project_id, :info, step, clean_msg)
+        process_and_broadcast(msg, project_id, step)
+        await_port_completion(port, project_id, step, timeout)
+
+      {^port, {:data, {_, msg}}} when is_binary(msg) ->
+        process_and_broadcast(msg, project_id, step)
+        await_port_completion(port, project_id, step, timeout)
+
+      {^port, {:data, msg}} when is_binary(msg) ->
+        process_and_broadcast(msg, project_id, step)
         await_port_completion(port, project_id, step, timeout)
 
       {^port, {:exit_status, status}} ->
@@ -149,6 +172,11 @@ defmodule Engine.Deployments.BuildWorker do
         Port.close(port)
         {:error, :timeout}
     end
+  end
+
+  defp process_and_broadcast(msg, project_id, step) do
+    clean_msg = String.replace(msg, ~r/\e\[[0-9;]*m/, "")
+    broadcast(project_id, :info, step, clean_msg)
   end
 
   defp run_docker_container(project_id, image_tag, config) do
@@ -172,11 +200,12 @@ defmodule Engine.Deployments.BuildWorker do
     """
 
     case System.shell(run_cmd) do
-      {_out, 0} ->
-        {raw, 0} = System.shell("docker port #{container_name} #{internal_port}")
+      {raw_id, 0} ->
+        container_id = String.trim(raw_id)
+        {raw_port, 0} = System.shell("docker port #{container_name} #{internal_port}")
 
         port =
-          raw
+          raw_port
           |> String.trim()
           |> String.split(":")
           |> List.last()
@@ -185,8 +214,8 @@ defmodule Engine.Deployments.BuildWorker do
 
         case wait_for_healthy(port) do
           :ok ->
-            log_success(project_id, :run, "App LIVE at http://localhost:#{port}")
-            {:ok, port}
+            # log_success(project_id, :run, "App LIVE at http://localhost:#{port}")
+            {:ok, port, container_id}
 
           {:error, _} ->
             {:error, "Container started but health check failed"}

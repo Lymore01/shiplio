@@ -20,7 +20,8 @@ defmodule Engine.Application do
       # {Engine.Worker, arg},
       # Start to serve requests, typically the last entry
       EngineWeb.Endpoint,
-      Engine.Deployments.BuildSupervisor
+      Engine.Deployments.BuildSupervisor,
+      Engine.Deployments.LogStreamSupervisor
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

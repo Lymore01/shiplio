@@ -14,8 +14,36 @@ defmodule Engine.Deployments.Templates do
       "nextjs" -> nextjs_template(pm, build_cmd, start_cmd, port)
       "elixir" -> elixir_template(port)
       "static" -> static_template(port)
+      "python" -> python_template(start_cmd, port)
       _ -> nodejs_template(pm, build_cmd, start_cmd, port)
     end
+  end
+
+  defp python_template(start_cmd, port) do
+    """
+    FROM python:3.10-slim
+
+    # 1. Install system-level dependencies if needed
+    RUN apt-get update && apt-get install -y --no-install-recommends libpq-dev gcc && rm -rf /var/lib/apt/lists/*
+
+    WORKDIR /app
+
+    # 2. Optimized Layer Caching: Install dependencies first
+    COPY requirements.txt .
+    RUN pip install --no-cache-dir -r requirements.txt
+
+    # 3. Copy the rest of the app
+    COPY . .
+
+    # 4. Security: Create and switch to a non-root user
+    RUN useradd -m shiplio_user && chown -R shiplio_user /app
+    USER shiplio_user
+
+    EXPOSE #{port}
+
+    # 5. Use the array format for CMD to handle signals properly
+    CMD [#{format_cmd(start_cmd)}]
+    """
   end
 
   defp static_template(port) do

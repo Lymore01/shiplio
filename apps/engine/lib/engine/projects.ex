@@ -73,6 +73,29 @@ defmodule Engine.Projects do
   end
 
   @doc """
+
+  """
+  def update_project_by_id(project_id, attrs) do
+    project = Repo.get!(Project, project_id)
+
+    project
+    |> Project.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Updates the container ID of a project.
+  Returns {:ok, project} or {:error, changeset}.
+  """
+  def update_project_container_id(project_id, container_id) do
+    project = Repo.get!(Project, project_id)
+
+    project
+    |> Project.changeset(%{container_id: container_id})
+    |> Repo.update()
+  end
+
+  @doc """
   Checks if a project with the given ID exists and belongs to the specified user.
   """
   def exists_for_user?(project_id, user_id) do

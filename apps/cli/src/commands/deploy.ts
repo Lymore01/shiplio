@@ -6,14 +6,7 @@ import { apiClient } from "../services/api.js";
 import { readShiplioConfig } from "../utils/config.js";
 import chalk from "chalk";
 import ora from "ora";
-import { connectToDeploymentLogs } from "../services/socket.js";
-
-interface Payload {
-  level: string;
-  step: string;
-  message: string;
-  timestamp: string;
-}
+import { streamBuildLogs } from "../services/socket.js";
 
 export async function deploy() {
   const archivePath = await createArchive();
@@ -29,34 +22,7 @@ export async function deploy() {
   const spinner = ora(`Deploying project...\n`).start();
 
   try {
-    const channel = await connectToDeploymentLogs();
-    
-    // @ts-ignore
-    channel.on("new_log", (payload: Payload) => {
-      const { level, message, step } = payload;
-
-      spinner.stop();
-
-      const colors: Record<string, any> = {
-        info: chalk.blue,
-        success: chalk.green,
-        error: chalk.red,
-        warn: chalk.yellow,
-      };
-
-      const colorize = colors[level] || chalk.white;
-      const prefix = colorize(`[${level}]`);
-
-      console.log(`${prefix} ${message.trim()}`);
-
-      if (step === "done") {
-        if (level === "success") process.exit(0);
-        else process.exit(1);
-      } else {
-        spinner.text = chalk.dim(`Remote: ${message.trim()}\n`);
-        spinner.start();
-      }
-    });
+    const buildStreamPromise = streamBuildLogs(spinner);
 
     const stream = fs.createReadStream(archivePath);
 
@@ -76,18 +42,7 @@ export async function deploy() {
       maxBodyLength: Infinity,
     });
 
-    console.log(chalk.dim("--- Remote Build Started ---"));
-
-    // channel.on("status_change", (payload: { status: string }) => {
-    //   if (payload.status === "success") {
-    //     console.log(chalk.green("\n Deployment successful!"));
-    //     process.exit(0);
-    //   }
-    //   if (payload.status === "failed") {
-    //     console.log(chalk.red("\n✖ Build failed. Check the logs above."));
-    //     process.exit(1);
-    //   }
-    // });
+    await buildStreamPromise;
   } catch (error) {
     spinner.stop();
     handleError(error, "Deployment failed");
