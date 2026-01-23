@@ -50,20 +50,28 @@ export async function streamBuildLogs(spinner: Ora) {
       }
     });
 
-    channel.on("build_complete", (payload: { url: string }) => {
-      spinner.stop();
+    channel.on(
+      "build_complete",
+      (payload: { url: string; duration: string }) => {
+        spinner.stop();
 
-      console.log(
-        `\n${chalk.green.bold("[SUCCESS]")}` +
-          " " +
-          chalk.green.bold("✅ Deployment successful!"),
-      );
-      console.log(
-        `${chalk.cyan("App LIVE at ")} ${chalk.underline(payload.url)}`,
-      );
+        console.log(
+          `\n${chalk.green.bold("[SUCCESS]")}` +
+            " " +
+            chalk.green.bold(`✅ Deployment successful!`),
+        );
+        console.log(`${chalk.gray("───")}`);
+        console.log(
+          `${chalk.cyan("➜ URL:")}  ${chalk.bold.underline.white(payload.url)}`,
+        );
+        console.log(
+          `${chalk.cyan("➜ Time:")} ${chalk.white(payload.duration)}`,
+        );
+        console.log(`${chalk.gray("───")}\n`);
 
-      process.exit(0);
-    });
+        process.exit(0);
+      },
+    );
 
     channel.onClose(() => {
       spinner.stop();
@@ -84,6 +92,13 @@ export async function streamBuildLogs(spinner: Ora) {
         reject(resp);
       })
       .receive("timeout", () => reject("Connection timeout"));
+
+    process.on("SIGINT", () => {
+      spinner.stop();
+      socket.disconnect();
+      process.stdout.write(chalk.yellow("\nDisconnected from Build logs.\n"));
+      process.exit(0);
+    });
   });
 }
 

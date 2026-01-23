@@ -5,6 +5,7 @@ import { apiClient } from "../services/api.js";
 import { handleError } from "../utils/formatErrors.js";
 import { readShiplioConfig } from "../utils/config.js";
 import { formatTerminalDate } from "../utils/formatTerminalDate.js";
+import { formatDuration } from "../utils/formatDuration.js";
 
 export async function status() {
   const config = await readShiplioConfig();
@@ -65,6 +66,12 @@ export async function status() {
       });
     }
 
+    if (project.duration) {
+      table.push({
+        [chalk.bold("Duration")]: formatDuration(project.duration),
+      });
+    }
+
     table.push({
       [chalk.bold("Last Update")]: formatTerminalDate(project.updated_at),
     });
@@ -79,7 +86,9 @@ export async function status() {
         ),
       );
     } else if (project.status === "active") {
-      console.log(chalk.green(`🚀 Your Project is live and ready for requests.\n`));
+      console.log(
+        chalk.green(`🚀 Your project is live and ready for requests.\n`),
+      );
     }
   } catch (error: any) {
     spinner.stop();
