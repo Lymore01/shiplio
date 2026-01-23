@@ -14,6 +14,7 @@ defmodule Engine.Deployments.BuildWorker do
 
   @impl true
   def handle_info(:perform_build, state) do
+    start_time = System.monotonic_time(:milliseconds)
     Engine.Projects.update_project_status(state.project_id, "building")
     workspace_dir = Path.dirname(state.path)
 
@@ -31,19 +32,35 @@ defmodule Engine.Deployments.BuildWorker do
     case result do
       {:ok, port, container_id} ->
         url = "http://localhost:#{port}"
+        end_time = System.monotonic_time(:milliseconds)
+        duration_ms = end_time - start_time
+
+        formatted_duration = format_duration(duration_ms)
 
         Engine.Projects.update_project_by_id(state.project_id, %{
           status: "active",
           local_url: url,
-          container_id: container_id
+          container_id: container_id,
+          last_build_duration_ms: duration_ms
         })
 
-        EngineWeb.Endpoint.broadcast("logs:#{state.project_id}", "build_complete", %{url: url})
-        # log_success(state.project_id, :done, "✅ Deployment successful!")
+        EngineWeb.Endpoint.broadcast("logs:#{state.project_id}", "build_complete", %{
+          url: url,
+          duration: formatted_duration
+        })
+
+      # log_success(state.project_id, :done, "✅ Deployment successful!")
 
       {:error, reason} ->
+        end_time = System.monotonic_time(:milliseconds)
+        duration_ms = end_time - start_time
+
+        Engine.Projects.update_project_by_id(state.project_id, %{
+          status: "failed",
+          last_build_duration_ms: duration_ms
+        })
+
         log_error(state.project_id, :done, "Deployment failed: #{reason}")
-        Engine.Projects.update_project_status(state.project_id, "failed")
     end
 
     Engine.Deployments.LogBuffer.clear_logs_delayed(state.project_id)
@@ -283,4 +300,7 @@ defmodule Engine.Deployments.BuildWorker do
         wait_for_healthy(port, retries - 1)
     end
   end
+
+  defp format_duration(ms) when ms < 1000, do: "#{ms}ms"
+  defp format_duration(ms), do: "#{Float.round(ms / 1000, 2)}s"
 end

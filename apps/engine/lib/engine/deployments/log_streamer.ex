@@ -13,29 +13,29 @@ defmodule Engine.Deployments.LogStreamer do
       Port.open({:spawn, cmd}, [
         :binary,
         :exit_status,
-        # :line,
-        # :stderr_to_stdout
+        :line,
+        :stderr_to_stdout
       ])
 
     {:ok, %{port: port, project_id: id}}
   end
 
   @impl true
+  def handle_info({_port, {:data, {:eol, text}}}, state) do
+    broadcast_log(text, state)
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info({_port, {:data, {:line, text}}}, state) do
-    EngineWeb.Endpoint.broadcast("logs:runtime:#{state.project_id}", "runtime_log", %{
-      message: text,
-      timestamp: DateTime.utc_now() |> DateTime.to_iso8601()
-    })
+    broadcast_log(state, text)
 
     {:noreply, state}
   end
 
   @impl true
   def handle_info({_port, {:data, text}}, state) when is_binary(text) do
-    EngineWeb.Endpoint.broadcast("logs:runtime:#{state.project_id}", "runtime_log", %{
-      message: text,
-      timestamp: DateTime.utc_now() |> DateTime.to_iso8601()
-    })
+    broadcast_log(state, text)
 
     {:noreply, state}
   end
@@ -43,5 +43,14 @@ defmodule Engine.Deployments.LogStreamer do
   @impl true
   def handle_info({_port, {:exit_status, _status}}, state) do
     {:stop, :normal, state}
+  end
+
+  defp broadcast_log(text, state) do
+    EngineWeb.Endpoint.broadcast("logs:runtime:#{state.project_id}", "runtime_log", %{
+      message: text,
+      timestamp: DateTime.utc_now() |> DateTime.to_iso8601()
+    })
+
+    # IO.puts("[#{state.project_id}] #{text}")
   end
 end

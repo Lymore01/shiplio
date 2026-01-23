@@ -67,6 +67,7 @@ defmodule EngineWeb.ProjectController do
             status: project.status,
             url: project.local_url,
             default_port: project.default_port,
+            duration: project.last_build_duration_ms,
             inserted_at: project.inserted_at,
             updated_at: project.updated_at
           }
