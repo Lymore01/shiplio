@@ -1,5 +1,6 @@
 defmodule EngineWeb.ProjectController do
   use EngineWeb, :controller
+  require Logger
   alias Engine.Projects
   alias EngineWeb.Auth.Guardian
 
@@ -75,6 +76,31 @@ defmodule EngineWeb.ProjectController do
     end
   end
 
+  def delete_project(conn, %{"id" => project_id} = params) do
+    user = Guardian.Plug.current_resource(conn)
+    soft_delete = Map.get(params, "soft") == "true"
+
+    case Projects.get_project_for_user!(user, project_id) do
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{message: "Project not found."})
+
+      project ->
+        Task.Supervisor.start_child(Engine.TaskSupervisor, fn ->
+          Engine.Deployments.CleanupWorker.run(project, soft: soft_delete)
+        end)
+
+        unless soft_delete do
+          Projects.delete_project(project)
+        end
+
+        conn
+        |> put_status(:no_content)
+        |> json(%{message: "Project deleted successfully."})
+    end
+  end
+
   # def set_env_vars(conn, %{"id" => project_id, "env_vars" => env_vars}) do
   # end
 
@@ -105,4 +131,17 @@ defmodule EngineWeb.ProjectController do
         })
     end
   end
+
+  # defp finalize_upload(tmp_path, dest_path) do
+  #   case File.cp(tmp_path, dest_path) do
+  #     :ok ->
+  #       # File.rm_rf(tmp_path)
+  #       :ok
+
+  #     {:error, reason} ->
+  #       Logger.error("Failed to copy project files: #{reason}")
+  #       # File.rm_rf(tmp_path)
+  #       {:error, reason}
+  #   end
+  # end
 end

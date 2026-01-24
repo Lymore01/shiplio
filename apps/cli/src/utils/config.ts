@@ -134,3 +134,24 @@ export async function generateShiplioJson(config: any) {
     spaces: 2,
   });
 }
+
+export async function cleanUpConfigs(): Promise<boolean> {
+  const targets = ["shiplio.json", ".shiplioignore", ".shiplio"];
+  const root = process.cwd();
+
+  try {
+    await Promise.all(
+      targets.map(async (target) => {
+        const fullPath = path.join(root, target);
+        if (await fs.pathExists(fullPath)) {
+          await fs.remove(fullPath);
+        }
+      }),
+    );
+
+    return true;
+  } catch (error) {
+    console.error(chalk.red("Error cleaning up configs:"), error);
+    return false;
+  }
+}

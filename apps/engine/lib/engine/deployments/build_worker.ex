@@ -1,6 +1,7 @@
 defmodule Engine.Deployments.BuildWorker do
   use GenServer, restart: :temporary
   alias Engine.Deployments.Templates
+  alias Engine.Utils.PathGuard
 
   def start_link({project_id, path}) do
     GenServer.start_link(__MODULE__, {project_id, path})
@@ -16,7 +17,6 @@ defmodule Engine.Deployments.BuildWorker do
   def handle_info(:perform_build, state) do
     start_time = System.monotonic_time(:milliseconds)
     Engine.Projects.update_project_status(state.project_id, "building")
-    workspace_dir = Path.dirname(state.path)
 
     result =
       with {:ok, build_dir} <- extract_source(state),
@@ -27,7 +27,7 @@ defmodule Engine.Deployments.BuildWorker do
       end
 
     log_info(state.project_id, :cleanup, "Cleaning up build workspace...")
-    File.rm_rf!(workspace_dir)
+    PathGuard.safe_delete_project(state.project_id)
 
     case result do
       {:ok, port, container_id} ->

@@ -22,6 +22,17 @@ export async function deploy() {
   const spinner = ora(`Deploying project...\n`).start();
 
   try {
+    spinner.text = "Cleaning up previous deployment...\n";
+    try {
+      await apiClient.delete(`/projects/${config.project_id}?soft=true`);
+    } catch (e: any) {
+      if (e.response?.status === 404) {
+        spinner.text = "Fresh deployment detected. Skipping cleanup...\n";
+      } else {
+        throw e;
+      }
+    }
+
     const buildStreamPromise = streamBuildLogs(spinner);
 
     const stream = fs.createReadStream(archivePath);

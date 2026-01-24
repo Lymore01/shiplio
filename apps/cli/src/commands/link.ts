@@ -9,8 +9,6 @@ import { getProjectContext } from "../utils/detectorV2.js";
 export async function link() {
   const context = await getProjectContext();
 
-  console.log("Context: ", context);
-
   const spinner = ora("Fetching your projects from Shiplio...").start();
   try {
     const { data: axiosResponse } = await apiClient.get("/projects");

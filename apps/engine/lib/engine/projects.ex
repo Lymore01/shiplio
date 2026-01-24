@@ -58,6 +58,14 @@ defmodule Engine.Projects do
   end
 
   @doc """
+  Deletes a project.
+  """
+  def delete_project(%Project{} = project) do
+    project
+    |> Repo.delete()
+  end
+
+  @doc """
   Updates the status of a project.
   Returns {:ok, project} or {:error, changeset}.
   """

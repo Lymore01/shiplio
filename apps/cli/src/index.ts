@@ -10,6 +10,7 @@ import { whoami } from "./commands/whoami.js";
 import { pushEnv } from "./commands/env.js";
 import { deploy } from "./commands/deploy.js";
 import { logs } from "./commands/logs.js";
+import { destroy } from "./commands/destroy.js";
 
 const program = new Command();
 
@@ -38,6 +39,8 @@ program.command("env:push").description("Push .env to Shiplio").action(pushEnv);
 program.command("deploy").description("Deploy your project").action(deploy);
 
 program.name("shiplio").description("Shiplio PaaS CLI").version("0.0.1");
+
+program.command("destroy").description("Destroy your project").action(destroy);
 
 program
   .command("logs")

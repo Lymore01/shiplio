@@ -55,6 +55,7 @@ defmodule EngineWeb.Router do
     get "/projects/:id", ProjectController, :show
     post "/projects/:id/env_vars", ProjectController, :set_env_vars
     post "/projects", ProjectController, :create
+    delete "/projects/:id", ProjectController, :delete_project
 
     post "/projects/:id/deployments", ProjectController, :deploy
   end

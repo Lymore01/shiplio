@@ -7,8 +7,8 @@ defmodule Engine.Application do
 
   @impl true
   def start(_type, _args) do
-
     Engine.Deployments.LogBuffer.init_table()
+
     children = [
       EngineWeb.Telemetry,
       Engine.Repo,
@@ -21,7 +21,8 @@ defmodule Engine.Application do
       # Start to serve requests, typically the last entry
       EngineWeb.Endpoint,
       Engine.Deployments.BuildSupervisor,
-      Engine.Deployments.LogStreamSupervisor
+      Engine.Deployments.LogStreamSupervisor,
+      {Task.Supervisor, name: Engine.TaskSupervisor}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
