@@ -10,7 +10,7 @@ import inquirer from "inquirer";
 import { apiClient } from "../services/api.js";
 import ora from "ora";
 import { handleError } from "../utils/formatErrors.js";
-import { getProjectContext } from "../utils/detector.js";
+import { getProjectContext } from "../utils/detectorV2.js";
 
 function validateProjectName(name: string) {
   if (!name || !name.trim()) return "Project name cannot be empty.";
@@ -20,9 +20,20 @@ function validateProjectName(name: string) {
 
 export async function init(projectName: string) {
   try {
+    const confidenceColors = {
+      high: chalk.green,
+      medium: chalk.yellow,
+      low: chalk.magenta,
+    };
+
     const context = await getProjectContext();
+
+    const confidenceLabel = confidenceColors[context.confidence](
+      context.confidence,
+    );
+
     console.log(
-      `${chalk.green("✔")} Detected ${chalk.bold(context.label)} stack.`,
+      `${chalk.green("✔")} Detected ${chalk.bold(context.label)} stack ${chalk.dim(`(confidence: ${confidenceLabel})`)}`,
     );
 
     const configExists = await hasShiplioConfig();
@@ -64,7 +75,7 @@ export async function init(projectName: string) {
     const { data: response } = await apiClient.post("/projects", {
       name: projectName,
       stack: context.type,
-      default_port: port,
+      default_port: port
     });
 
     const project = response.data;
@@ -74,13 +85,17 @@ export async function init(projectName: string) {
     await createShiplioIgnoreFile();
 
     await generateShiplioJson({
-      version: context.version,
+      version: context.version || "unknown",
       name: projectName,
       project_id: project.id,
       port: port,
       stack: context.type,
       build_command: context.defaultBuild,
       start_command: context.defaultStart,
+      envVars: context.envVars,
+      confidence: context.confidence,
+      detectedFiles: context.detectedFiles,
+      detectedPM: context.detectedPM,
     });
 
     spinner.succeed(chalk.green("Project initialized successfully!"));

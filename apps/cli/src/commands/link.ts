@@ -4,10 +4,12 @@ import chalk from "chalk";
 import { handleError } from "../utils/formatErrors.js";
 import { apiClient } from "../services/api.js";
 import { createShiplioConfig, generateShiplioJson } from "../utils/config.js";
-import { getProjectContext } from "../utils/detector.js";
+import { getProjectContext } from "../utils/detectorV2.js";
 
 export async function link() {
   const context = await getProjectContext();
+
+  console.log("Context: ", context);
 
   const spinner = ora("Fetching your projects from Shiplio...").start();
   try {
@@ -45,13 +47,17 @@ export async function link() {
     await createShiplioConfig(selectedProject.name, selectedProject.id);
 
     await generateShiplioJson({
-      version: context.version,
+      version: context.version || "unknown",
       name: selectedProject.name,
       project_id: selectedProject.id,
       port: selectedProject.default_port,
       stack: context.type,
       build_command: context.defaultBuild,
       start_command: context.defaultStart,
+      envVars: context.envVars,
+      confidence: context.confidence,
+      detectedFiles: context.detectedFiles,
+      detectedPM: context.detectedPM,
     });
 
     configSpinner.succeed(

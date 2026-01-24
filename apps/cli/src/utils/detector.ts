@@ -64,6 +64,7 @@ const STACK_MAP: Record<Stack, Omit<StackInfo, "type">> = {
 const STACK_ANCHORS: Record<string, Stack> = {
   "index.html": "static",
   "manage.py": "python",
+  "pyproject.toml": "python",
   "requirements.txt": "python",
   "mix.exs": "elixir",
 };
@@ -184,10 +185,11 @@ export async function detectLikelyPort(projectDir: string): Promise<number> {
     return await detectFromElixir(projectDir);
   }
 
-  if (
-    fs.existsSync(path.join(projectDir, "requirements.txt")) ||
-    fs.existsSync(path.join(projectDir, "manage.py"))
-  ) {
+  const isPython = ["requirements.txt", "manage.py", "pyproject.toml"].some(
+    (file) => fs.existsSync(path.join(projectDir, file)),
+  );
+
+  if (isPython) {
     return await detectFromPython(projectDir);
   }
 
@@ -195,7 +197,7 @@ export async function detectLikelyPort(projectDir: string): Promise<number> {
 }
 
 async function detectFromPython(dir: string): Promise<number> {
-  const files = ["manage.py", "app.py", "main.py"];
+  const files = ["manage.py", "app.py", "main.py", "pyproject.toml"];
   for (const file of files) {
     const filePath = path.join(dir, file);
     if (fs.existsSync(filePath)) {

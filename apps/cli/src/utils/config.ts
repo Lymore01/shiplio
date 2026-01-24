@@ -94,6 +94,21 @@ export async function createShiplioIgnoreFile() {
   await fs.writeFile(ignorePath, content);
 }
 
+const getEnvDefaults = (envVars: string[]) => {
+  const env: Record<string, string> = {};
+
+  env["DEPLOYMENT_ENV"] = "production";
+
+  envVars.forEach((key) => {
+    if (key === "NODE_ENV") env[key] = "production";
+    else if (key === "PYTHONUNBUFFERED") env[key] = "1";
+    else if (key === "MIX_ENV") env[key] = "prod";
+    else env[key] = "";
+  });
+
+  return env;
+};
+
 export async function generateShiplioJson(config: any) {
   const content = {
     version: config.version,
@@ -106,11 +121,16 @@ export async function generateShiplioJson(config: any) {
     runtime: {
       start_command: config.start_command,
       port: config.port,
-      env: {
-        NODE_ENV: "production"
-      }
-    }
+      env: getEnvDefaults(config.envVars),
+    },
+    metadata: {
+      confidence: config.confidence,
+      detected_files: config.detectedFiles,
+      pm: config.detectedPM,
+    },
   };
 
-  await fs.writeJson(path.join(process.cwd(), "shiplio.json"), content, { spaces: 2 });
+  await fs.writeJson(path.join(process.cwd(), "shiplio.json"), content, {
+    spaces: 2,
+  });
 }
