@@ -24,11 +24,13 @@ Content-Type: application/json
 ### 3. Create a project shell
 # @name create_project
 POST http://localhost:4000/api/projects
-Authorization: Bearer {{token}}
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzaGlwbGlvIiwiZXhwIjoxNzcxNzg4MTA0LCJpYXQiOjE3NjkxOTYxMDQsImlzcyI6InNoaXBsaW8iLCJqdGkiOiJiNGFmMjExNC01ZWZiLTQwZjUtOTEzNS1lOWFjZDAzNDQ4MWMiLCJuYmYiOjE3NjkxOTYxMDMsInN1YiI6IjEwIiwidHlwIjoiYWNjZXNzIn0.hCHgXR2FGdmWSj7lS8prQ0es8_uY6H6EZj9WVbcnmVksabjn4fNaMiKdLmgmIDa0nNCDNL55wbUg6cjktwwrkw
 Content-Type: application/json
 
 {
-  "name": "my-second-app"
+  "name": "my-second-app",
+  "stack": "nodejs",
+  "default_port": 3000
 }
 
 ###
@@ -53,8 +55,8 @@ Authorization: Bearer {{token}}
 
 ### Get Project Details
 GET http://localhost:4000/api/projects/56
-Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzaGlwbGlvIiwiZXhwIjoxNzcxNDg5MDgxLCJpYXQiOjE3Njg4OTcwODEsImlzcyI6InNoaXBsaW8iLCJqdGkiOiJiZmQ3OTc2ZS1lZjlkLTQ1MGQtYWZlMS1jZTg1MmMzZDEyN2YiLCJuYmYiOjE3Njg4OTcwODAsInN1YiI6IjEwIiwidHlwIjoiYWNjZXNzIn0.MwrVPx4YuoenXRnI8EX4_mlhZ4JpPwpgBGE7jf0iTj_RirKV_w8i7ArauwButF7vgFzBLtThALBqEXdqmBMXgA
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzaGlwbGlvIiwiZXhwIjoxNzcxNzg4MTA0LCJpYXQiOjE3NjkxOTYxMDQsImlzcyI6InNoaXBsaW8iLCJqdGkiOiJiNGFmMjExNC01ZWZiLTQwZjUtOTEzNS1lOWFjZDAzNDQ4MWMiLCJuYmYiOjE3NjkxOTYxMDMsInN1YiI6IjEwIiwidHlwIjoiYWNjZXNzIn0.hCHgXR2FGdmWSj7lS8prQ0es8_uY6H6EZj9WVbcnmVksabjn4fNaMiKdLmgmIDa0nNCDNL55wbUg6cjktwwrkw
 
 ### Me
 GET http://localhost:4000/api/auth/me
-Authorization: Bearer {{token}}
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzaGlwbGlvIiwiZXhwIjoxNzcxNzg4MTA0LCJpYXQiOjE3NjkxOTYxMDQsImlzcyI6InNoaXBsaW8iLCJqdGkiOiJiNGFmMjExNC01ZWZiLTQwZjUtOTEzNS1lOWFjZDAzNDQ4MWMiLCJuYmYiOjE3NjkxOTYxMDMsInN1YiI6IjEwIiwidHlwIjoiYWNjZXNzIn0.hCHgXR2FGdmWSj7lS8prQ0es8_uY6H6EZj9WVbcnmVksabjn4fNaMiKdLmgmIDa0nNCDNL55wbUg6cjktwwrkw

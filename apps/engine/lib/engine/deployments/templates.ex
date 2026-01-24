@@ -3,7 +3,7 @@ defmodule Engine.Deployments.Templates do
   Generates a Dockerfile based on the stack and configuration.
   Supports npm, pnpm, yarn, and bun via Corepack.
   """
-  def get_dockerfile(stack, config) do
+  def get_dockerfile(project_path, stack, config) do
     pm = config["package_manager"] || "npm"
 
     build_cmd = get_in(config, ["build", "command"])
@@ -11,38 +11,62 @@ defmodule Engine.Deployments.Templates do
     port = get_in(config, ["runtime", "port"]) || 3000
 
     case stack do
-      "nextjs" -> nextjs_template(pm, build_cmd, start_cmd, port)
-      "elixir" -> elixir_template(port)
-      "static" -> static_template(port)
-      "python" -> python_template(start_cmd, port)
-      _ -> nodejs_template(pm, build_cmd, start_cmd, port)
+      "nextjs" ->
+        nextjs_template(pm, build_cmd, start_cmd, port)
+
+      "elixir" ->
+        elixir_template(port)
+
+      "static" ->
+        static_template(port)
+
+      stack when stack in ["python", "fastapi", "django", "flask"] ->
+        python_template(project_path, start_cmd, build_cmd, port)
+
+      _ ->
+        nodejs_template(pm, build_cmd, start_cmd, port)
     end
   end
 
-  defp python_template(start_cmd, port) do
+  defp python_template(project_path, start_cmd, build_cmd, port) do
+    has_requirements = File.exists?(Path.join(project_path, "requirements.txt"))
+
+    requirements_block =
+      if has_requirements do
+        """
+        # Optimized Layer Caching: Install dependencies first
+        COPY requirements.txt .
+        RUN #{build_cmd}
+        """
+      else
+        "# No requirements.txt found, skipping pip install"
+      end
+
     """
     FROM python:3.10-slim
 
-    # 1. Install system-level dependencies if needed
+    # Install system-level dependencies
     RUN apt-get update && apt-get install -y --no-install-recommends libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 
     WORKDIR /app
 
-    # 2. Optimized Layer Caching: Install dependencies first
-    COPY requirements.txt .
-    RUN pip install --no-cache-dir -r requirements.txt
+    # Ensure logs are visible in the CLI immediately
+    ENV PYTHONUNBUFFERED=1
+    # Default port if none is provided at runtime
+    ENV PORT=#{port}
 
-    # 3. Copy the rest of the app
+    #{requirements_block}
+
+    # Copy the rest of the app
     COPY . .
 
-    # 4. Security: Create and switch to a non-root user
+    # Security: Create and switch to a non-root user
     RUN useradd -m shiplio_user && chown -R shiplio_user /app
     USER shiplio_user
 
     EXPOSE #{port}
 
-    # 5. Use the array format for CMD to handle signals properly
-    CMD [#{format_cmd(start_cmd)}]
+    CMD ["sh", "-c", "#{start_cmd}"]
     """
   end
 

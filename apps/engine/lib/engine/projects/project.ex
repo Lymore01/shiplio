@@ -26,7 +26,7 @@ defmodule Engine.Projects.Project do
     |> validate_format(:name, ~r/^[a-z0-9-]+$/)
     |> unique_constraint([:name, :user_id], name: :projects_user_id_name_index)
     |> validate_inclusion(:status, ["initialized", "building", "active", "failed", "stopped"])
-    |> validate_inclusion(:stack, ["nodejs", "python", "elixir", "nextjs", "static"])
+    |> validate_inclusion(:stack, ["nodejs", "python", "elixir", "nextjs", "django", "flask", "fastapi", "static", "unknown"])
   end
 
   defp slugify(name) when is_binary(name) do

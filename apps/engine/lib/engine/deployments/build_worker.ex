@@ -124,7 +124,7 @@ defmodule Engine.Deployments.BuildWorker do
       {:ok, Path.dirname(dockerfile_path)}
     else
       log_info(project_id, :dockerfile, "Generating Dockerfile (#{stack_type})")
-      content = Templates.get_dockerfile(stack_type, config)
+      content = Templates.get_dockerfile(build_dir, stack_type, config)
       File.write!(Path.join(build_dir, "Dockerfile"), content)
       {:ok, build_dir}
     end
