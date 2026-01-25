@@ -3,7 +3,7 @@ import { handleError } from "../utils/formatErrors.js";
 import fs from "fs-extra";
 import FormData from "form-data";
 import { apiClient } from "../services/api.js";
-import { readShiplioConfig } from "../utils/config.js";
+import { readShiplioConfig, readShiplioJson } from "../utils/config.js";
 import chalk from "chalk";
 import ora from "ora";
 import { streamBuildLogs } from "../services/socket.js";
@@ -11,6 +11,7 @@ import { streamBuildLogs } from "../services/socket.js";
 export async function deploy() {
   const archivePath = await createArchive();
   const config = await readShiplioConfig();
+  const context = await readShiplioJson();
 
   if (!config) {
     console.log(
@@ -44,6 +45,8 @@ export async function deploy() {
       filename,
       contentType: "application/gzip",
     });
+
+    form.append("public_env", JSON.stringify(context?.runtime.env || {}));
 
     spinner.text = "Uploading to Shiplio...\n";
 

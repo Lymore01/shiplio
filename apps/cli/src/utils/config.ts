@@ -109,6 +109,7 @@ const getEnvDefaults = (envVars: string[]) => {
   return env;
 };
 
+
 export async function generateShiplioJson(config: any) {
   const content = {
     version: config.version,
@@ -133,6 +134,41 @@ export async function generateShiplioJson(config: any) {
   await fs.writeJson(path.join(process.cwd(), "shiplio.json"), content, {
     spaces: 2,
   });
+}
+
+interface ShiplioJson {
+  version: string;
+  name: string;
+  project_id: string;
+  stack: string;
+  build: {
+    command: string;
+  };
+  runtime: {
+    start_command: string;
+    port: number;
+    env: Record<string, string>;
+  };
+  metadata: {
+    confidence: number;
+    detected_files: string[];
+    pm: string;
+  };
+}
+
+export async function readShiplioJson(): Promise<ShiplioJson | null> {
+  const jsonPath = path.join(process.cwd(), "shiplio.json");
+
+  try {
+    if (!fs.existsSync(jsonPath)) {
+      throw new Error("Shiplio config not found");
+    }
+    const configData = await fs.readJson(jsonPath);
+    return configData;
+  } catch (error) {
+    console.error("Error reading Shiplio config:", error);
+    return null;
+  }
 }
 
 export async function cleanUpConfigs(): Promise<boolean> {
