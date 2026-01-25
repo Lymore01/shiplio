@@ -9,8 +9,8 @@ defmodule Engine.Deployments.BuildSupervisor do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  def start_build(project_id, path) do
-    spec = {Engine.Deployments.BuildWorker, {project_id, path}}
+  def start_build(project_id, path, public_env) do
+    spec = {Engine.Deployments.BuildWorker, {project_id, path, public_env}}
     DynamicSupervisor.start_child(__MODULE__, spec)
   end
 end

@@ -9,6 +9,7 @@ defmodule Engine.Projects.Project do
     field :default_port, :integer
     field :local_url, :string
     field :container_id, :string
+    field :env_vars, :map, default: %{}
     field :last_build_duration_ms, :integer
 
     belongs_to :user, Engine.Accounts.User
@@ -19,7 +20,7 @@ defmodule Engine.Projects.Project do
   @doc false
   def changeset(project, attrs) do
     project
-    |> cast(attrs, [:name, :status, :stack, :default_port, :local_url, :container_id, :last_build_duration_ms])
+    |> cast(attrs, [:name, :status, :stack, :default_port, :local_url, :container_id, :env_vars, :last_build_duration_ms])
     |> validate_required([:name])
     |> validate_length(:name, min: 3, max: 30)
     |> update_change(:name, &slugify/1)

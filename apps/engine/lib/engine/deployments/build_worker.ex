@@ -3,14 +3,14 @@ defmodule Engine.Deployments.BuildWorker do
   alias Engine.Deployments.Templates
   alias Engine.Utils.PathGuard
 
-  def start_link({project_id, path}) do
-    GenServer.start_link(__MODULE__, {project_id, path})
+  def start_link({project_id, path, public_env}) do
+    GenServer.start_link(__MODULE__, {project_id, path, public_env})
   end
 
   @impl true
-  def init({project_id, path}) do
+  def init({project_id, path, public_env}) do
     send(self(), :perform_build)
-    {:ok, %{project_id: project_id, path: path}}
+    {:ok, %{project_id: project_id, path: path, public_env: public_env}}
   end
 
   @impl true
@@ -23,7 +23,7 @@ defmodule Engine.Deployments.BuildWorker do
            {:ok, config} <- resolve_config(state.project_id, build_dir),
            {:ok, context_dir} <- prepare_build_context(state.project_id, build_dir, config),
            {:ok, image_tag} <- run_docker_build(state.project_id, context_dir) do
-        run_docker_container(state.project_id, image_tag, config)
+        run_docker_container(state.project_id, image_tag, state.public_env)
       end
 
     log_info(state.project_id, :cleanup, "Cleaning up build workspace...")
@@ -196,10 +196,18 @@ defmodule Engine.Deployments.BuildWorker do
     broadcast(project_id, :info, step, clean_msg)
   end
 
-  defp run_docker_container(project_id, image_tag, config) do
+  def run_docker_container(project_id, image_tag, public_env \\ %{}) do
+    project = Engine.Projects.get_project!(project_id)
+
     container_name = "shiplio-container-#{project_id}"
 
-    internal_port = get_in(config, ["runtime", "port"]) || 3000
+    internal_port = project.default_port || 3000
+
+    merged_env = Map.merge(public_env, project.env_vars || %{})
+    env_flags =
+    merged_env
+    |> Enum.map(fn {k, v} -> "-e #{k}='#{v}'" end)
+    |> Enum.join(" ")
 
     log_info(project_id, :run, "Cleaning up existing containers")
     System.shell("docker rm -f #{container_name} > #{dev_null()} 2>&1")
@@ -211,6 +219,7 @@ defmodule Engine.Deployments.BuildWorker do
       --name #{container_name} \
       -p :#{internal_port} \
       -e PORT=#{internal_port} \
+      #{env_flags} \
       --memory="512m" \
       --cpus="0.5" \
       #{image_tag}

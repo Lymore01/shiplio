@@ -101,13 +101,73 @@ defmodule EngineWeb.ProjectController do
     end
   end
 
-  # def set_env_vars(conn, %{"id" => project_id, "env_vars" => env_vars}) do
-  # end
+  def set_env(conn, %{"id" => project_id, "env" => new_vars}) do
+    project = Projects.get_project!(project_id)
 
-  def deploy(conn, %{"id" => project_id, "file" => %Plug.Upload{path: tmp_path}}) do
+    updated_env = Map.merge(new_vars || %{}, project.env_vars)
+
+    {:ok, updated_project} =
+      Projects.update_project(project, %{env_vars: updated_env})
+
+    if updated_project.status == "active" do
+      Task.Supervisor.start_child(Engine.TaskSupervisor, fn ->
+        Engine.Deployments.BuildWorker.run_docker_container(
+          project.id,
+          "shiplio-app-#{updated_project.id}"
+        )
+      end)
+    end
+
+    conn
+    |> put_status(:ok)
+    |> json(%{
+      message: "Environment variables updated successfully.",
+      env_vars: updated_project.env_vars
+    })
+  end
+
+  def get_env(conn, %{"id" => project_id}) do
+    project = Projects.get_project!(project_id)
+
+    conn
+    |> put_status(:ok)
+    |> json(%{
+      env_vars: project.env_vars
+    })
+  end
+
+  def unset_env(conn, %{"id" => project_id, "keys" => keys}) do
+    project = Projects.get_project!(project_id)
+
+    updated_env = Map.drop(project.env_vars, keys)
+
+    {:ok, updated_project} =
+      Projects.update_project(project, %{env_vars: updated_env})
+
+    if updated_project.status == "active" do
+      Task.Supervisor.start_child(Engine.TaskSupervisor, fn ->
+        Engine.Deployments.BuildWorker.run_docker_container(
+          project.id,
+          "shiplio-app-#{updated_project.id}"
+        )
+      end)
+    end
+
+    conn
+    |> put_status(:ok)
+    |> json(%{
+      message: "Environment variables removed successfully.",
+      env_vars: updated_project.env_vars
+    })
+  end
+
+  def deploy(conn, %{"id" => project_id, "file" => %Plug.Upload{path: tmp_path}} = params) do
     root = Application.get_env(:engine, :uploads)[:root_path] || "uploads"
     user = Guardian.Plug.current_resource(conn)
     project = Projects.get_project_for_user!(user, project_id)
+
+    public_env_raw = Map.get(params, "public_env", "{}")
+    public_env = Jason.decode!(public_env_raw)
 
     timestamp = DateTime.utc_now() |> DateTime.to_unix() |> Integer.to_string()
 
@@ -116,7 +176,7 @@ defmodule EngineWeb.ProjectController do
 
     case File.cp(tmp_path, dest_path) do
       :ok ->
-        Engine.Deployments.BuildSupervisor.start_build(project.id, dest_path)
+        Engine.Deployments.BuildSupervisor.start_build(project.id, dest_path, public_env)
 
         conn
         |> put_status(:accepted)
