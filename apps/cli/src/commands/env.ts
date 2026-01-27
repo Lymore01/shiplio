@@ -6,7 +6,7 @@ import ora from "ora";
 import { handleError } from "../utils/formatErrors.js";
 import dotenv from "dotenv";
 
-export async function pushEnv() {
+export async function pushEnvFromDotEnv() {
   const config = await readShiplioConfig();
   if (!config) {
     console.log(

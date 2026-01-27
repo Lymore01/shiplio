@@ -13,6 +13,8 @@ import { destroy } from "./commands/destroy.js";
 import { setEnv } from "./commands/setEnv.js";
 import { listEnv } from "./commands/listEnv.js";
 import { unsetEnv } from "./commands/unsetEnv.js";
+import { pause } from "./commands/pause.js";
+import { resume } from "./commands/resume.js";
 
 const program = new Command();
 
@@ -53,8 +55,11 @@ env
 
 env
   .command("list")
+  .option("-r, --raw", "Show raw environment variables")
   .description("List all environment variables")
-  .action(listEnv);
+  .action(async (options) => {
+    await listEnv(options);
+  });
 
 env
   .command("unset [keys...]")
@@ -62,6 +67,9 @@ env
   .action((keys) => {
     return unsetEnv(keys);
   });
+
+program.command("pause").description("Pause your project").action(pause);
+program.command("resume").description("Resume your project").action(resume);
 
 program.name("shiplio").description("Shiplio PaaS CLI").version("0.0.1");
 

@@ -42,7 +42,6 @@ export async function setEnv(vars: string[]) {
     );
   } catch (err) {
     spinner.stop();
-    console.log(err);
     handleError(err, "Failed to set environment variables.");
   }
 }

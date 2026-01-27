@@ -5,7 +5,7 @@ import { apiClient } from "../services/api.js";
 import { handleError } from "../utils/formatErrors.js";
 import Table from "cli-table3";
 
-export async function listEnv() {
+export async function listEnv(options: { raw?: boolean }) {
   const config = await readShiplioConfig();
   if (!config) return console.log(chalk.red("✖ No shiplio.json found."));
 
@@ -34,6 +34,11 @@ export async function listEnv() {
 
     keys.forEach((key) => {
       const value = envVars[key];
+      if (options.raw) {
+        table.push([chalk.green(key), value]);
+        return;
+      }
+
       const displayValue =
         key.toLowerCase().includes("secret") ||
         key.toLowerCase().includes("key")
