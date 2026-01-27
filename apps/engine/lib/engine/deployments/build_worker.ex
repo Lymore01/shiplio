@@ -31,25 +31,23 @@ defmodule Engine.Deployments.BuildWorker do
 
     case result do
       {:ok, port, container_id} ->
-        url = "http://localhost:#{port}"
         end_time = System.monotonic_time(:milliseconds)
         duration_ms = end_time - start_time
 
         formatted_duration = format_duration(duration_ms)
 
-        Engine.Projects.update_project_by_id(state.project_id, %{
-          status: "active",
-          local_url: url,
-          container_id: container_id,
-          last_build_duration_ms: duration_ms
-        })
+        {:ok, updated_project} =
+          Engine.Projects.mark_project_as_active(
+            state.project_id,
+            port,
+            container_id,
+            duration_ms
+          )
 
         EngineWeb.Endpoint.broadcast("logs:#{state.project_id}", "build_complete", %{
-          url: url,
+          url: updated_project.local_url,
           duration: formatted_duration
         })
-
-      # log_success(state.project_id, :done, "✅ Deployment successful!")
 
       {:error, reason} ->
         end_time = System.monotonic_time(:milliseconds)
@@ -201,13 +199,15 @@ defmodule Engine.Deployments.BuildWorker do
 
     container_name = "shiplio-container-#{project_id}"
 
+    public_port = project.dedicated_port || Engine.Utils.PortAllocator.allocate_next_port()
     internal_port = project.default_port || 3000
 
     merged_env = Map.merge(public_env, project.env_vars || %{})
+
     env_flags =
-    merged_env
-    |> Enum.map(fn {k, v} -> "-e #{k}='#{v}'" end)
-    |> Enum.join(" ")
+      merged_env
+      |> Enum.map(fn {k, v} -> "-e #{k}='#{v}'" end)
+      |> Enum.join(" ")
 
     log_info(project_id, :run, "Cleaning up existing containers")
     System.shell("docker rm -f #{container_name} > #{dev_null()} 2>&1")
@@ -217,7 +217,7 @@ defmodule Engine.Deployments.BuildWorker do
     run_cmd = """
     docker run -d \
       --name #{container_name} \
-      -p :#{internal_port} \
+      -p #{public_port}:#{internal_port} \
       -e PORT=#{internal_port} \
       #{env_flags} \
       --memory="512m" \
@@ -228,24 +228,10 @@ defmodule Engine.Deployments.BuildWorker do
     case System.shell(run_cmd) do
       {raw_id, 0} ->
         container_id = String.trim(raw_id)
-        {raw_port, 0} = System.shell("docker port #{container_name} #{internal_port}")
 
-        port =
-          raw_port
-          |> String.trim()
-          |> String.split(":")
-          |> List.last()
+        log_info(project_id, :run, "Waiting for app on port #{public_port}")
 
-        log_info(project_id, :run, "Waiting for app on port #{port}")
-
-        case wait_for_healthy(port) do
-          :ok ->
-            # log_success(project_id, :run, "App LIVE at http://localhost:#{port}")
-            {:ok, port, container_id}
-
-          {:error, _} ->
-            {:error, "Container started but health check failed"}
-        end
+        {:ok, public_port, container_id}
 
       _ ->
         {:error, "Failed to start container"}

@@ -41,6 +41,10 @@ defmodule Engine.Projects do
   The "Provisioning" step: Creates a project shell for a user.
   """
   def create_project(%User{} = user, attrs \\ %{}) do
+    dedicated_port = Engine.Utils.PortAllocator.allocate_next_port()
+
+    attrs = Map.put(attrs, :dedicated_port, dedicated_port)
+
     %Project{}
     |> Project.changeset(attrs)
     # Links the project to the owner
@@ -89,6 +93,24 @@ defmodule Engine.Projects do
     project
     |> Project.changeset(attrs)
     |> Repo.update()
+  end
+
+  @doc """
+  Marks a project as active, setting its status, URL, container ID, and optional build
+  duration.
+  Returns {:ok, project} or {:error, changeset}.
+  """
+
+  def mark_project_as_active(project_id, port, container_id, duration_ms \\ nil) do
+    vps_ip = System.get_env("SHIPLIO_HOST_IP") || "localhost"
+    url = "http://#{vps_ip}:#{port}"
+
+    update_project_by_id(project_id, %{
+      status: "active",
+      local_url: url,
+      container_id: container_id,
+      last_build_duration_ms: duration_ms
+    })
   end
 
   @doc """

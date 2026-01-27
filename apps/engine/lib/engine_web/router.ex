@@ -56,6 +56,8 @@ defmodule EngineWeb.Router do
     patch "/projects/:id/env", ProjectController, :set_env
     get "/projects/:id/env", ProjectController, :get_env
     post "/projects/:id/env/unset", ProjectController, :unset_env
+    post "/projects/:id/pause", ProjectController, :pause
+    post "/projects/:id/resume", ProjectController, :resume
     post "/projects", ProjectController, :create
     delete "/projects/:id", ProjectController, :delete_project
 

@@ -7,6 +7,7 @@ defmodule Engine.Projects.Project do
     field :status, :string, default: "initialized"
     field :stack, :string
     field :default_port, :integer
+    field :dedicated_port, :integer
     field :local_url, :string
     field :container_id, :string
     field :env_vars, :map, default: %{}
@@ -20,13 +21,13 @@ defmodule Engine.Projects.Project do
   @doc false
   def changeset(project, attrs) do
     project
-    |> cast(attrs, [:name, :status, :stack, :default_port, :local_url, :container_id, :env_vars, :last_build_duration_ms])
+    |> cast(attrs, [:name, :status, :stack, :default_port, :dedicated_port, :local_url, :container_id, :env_vars, :last_build_duration_ms])
     |> validate_required([:name])
     |> validate_length(:name, min: 3, max: 30)
     |> update_change(:name, &slugify/1)
     |> validate_format(:name, ~r/^[a-z0-9-]+$/)
     |> unique_constraint([:name, :user_id], name: :projects_user_id_name_index)
-    |> validate_inclusion(:status, ["initialized", "building", "active", "failed", "stopped"])
+    |> validate_inclusion(:status, ["initialized", "building", "active", "failed", "stopped", "paused"])
     |> validate_inclusion(:stack, ["nodejs", "python", "elixir", "nextjs", "django", "flask", "fastapi", "static", "unknown"])
   end
 

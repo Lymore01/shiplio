@@ -161,6 +161,61 @@ defmodule EngineWeb.ProjectController do
     })
   end
 
+  def pause(conn, %{"id" => project_id}) do
+    project = Projects.get_project!(project_id)
+    container_name = "shiplio-container-#{project.id}"
+
+    case project.status do
+      "active" ->
+        System.shell("docker stop --time 5 #{container_name}")
+
+        {:ok, updated_project} =
+          Projects.update_project(project, %{status: "paused"})
+
+        conn
+        |> put_status(:ok)
+        |> json(%{
+          message: "Project paused successfully.",
+          status: updated_project.status
+        })
+
+      _ ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{message: "Only active projects can be paused."})
+    end
+  end
+
+  def resume(conn, %{"id" => project_id}) do
+    project = Projects.get_project!(project_id)
+
+    case project.status do
+      "paused" ->
+        Task.Supervisor.start_child(Engine.TaskSupervisor, fn ->
+          {:ok, port, container_id} =
+            Engine.Deployments.BuildWorker.run_docker_container(
+              project.id,
+              "shiplio-app-#{project.id}"
+            )
+
+          Projects.mark_project_as_active(project_id, port, container_id)
+        end)
+
+        conn
+        |> put_status(:ok)
+        |> json(%{
+          message: "Project resumed successfully."
+        })
+
+      _ ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{
+          message: "Only paused projects can be resumed. Current status: #{project.status}"
+        })
+    end
+  end
+
   def deploy(conn, %{"id" => project_id, "file" => %Plug.Upload{path: tmp_path}} = params) do
     root = Application.get_env(:engine, :uploads)[:root_path] || "uploads"
     user = Guardian.Plug.current_resource(conn)
