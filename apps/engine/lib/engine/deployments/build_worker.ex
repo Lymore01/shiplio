@@ -281,21 +281,6 @@ defmodule Engine.Deployments.BuildWorker do
     File.write!(path, content)
   end
 
-  defp wait_for_healthy(port, retries \\ 10)
-  defp wait_for_healthy(_, 0), do: {:error, :timeout}
-
-  defp wait_for_healthy(port, retries) do
-    case :gen_tcp.connect(~c"localhost", String.to_integer(port), [], 1000) do
-      {:ok, socket} ->
-        :gen_tcp.close(socket)
-        :ok
-
-      _ ->
-        Process.sleep(1000)
-        wait_for_healthy(port, retries - 1)
-    end
-  end
-
   defp format_duration(ms) when ms < 1000, do: "#{ms}ms"
   defp format_duration(ms), do: "#{Float.round(ms / 1000, 2)}s"
 end

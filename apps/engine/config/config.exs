@@ -36,6 +36,7 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
+config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 
 # Configure Guardian
 config :engine, EngineWeb.Auth.Guardian,

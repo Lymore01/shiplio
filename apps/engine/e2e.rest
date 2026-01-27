@@ -64,8 +64,8 @@ GET http://localhost:4000/api/projects
 Authorization: Bearer {{token}}
 
 ### Get Project Details
-GET http://localhost:4000/api/projects/56
-Authorization: Bearer {token}
+GET http://localhost:4000/api/projects/77
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzaGlwbGlvIiwiZXhwIjoxNzcxNzg4MTA0LCJpYXQiOjE3NjkxOTYxMDQsImlzcyI6InNoaXBsaW8iLCJqdGkiOiJiNGFmMjExNC01ZWZiLTQwZjUtOTEzNS1lOWFjZDAzNDQ4MWMiLCJuYmYiOjE3NjkxOTYxMDMsInN1YiI6IjEwIiwidHlwIjoiYWNjZXNzIn0.hCHgXR2FGdmWSj7lS8prQ0es8_uY6H6EZj9WVbcnmVksabjn4fNaMiKdLmgmIDa0nNCDNL55wbUg6cjktwwrkw
 
 ### Me
 GET http://localhost:4000/api/auth/me

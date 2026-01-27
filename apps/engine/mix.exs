@@ -47,7 +47,8 @@ defmodule Engine.MixProject do
       {:bandit, "~> 1.5"},
       {:guardian, "~> 2.3"},
       {:pbkdf2_elixir, "~> 2.0"},
-      {:phoenix_html_helpers, "~> 1.0"}
+      {:phoenix_html_helpers, "~> 1.0"},
+      {:tzdata, "~> 1.1"}
     ]
   end
 
