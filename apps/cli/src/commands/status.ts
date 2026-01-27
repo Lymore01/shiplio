@@ -36,6 +36,7 @@ export async function status() {
       failed: { color: chalk.red, icon: "✖" },
       initialized: { color: chalk.blue, icon: "○" },
       stopped: { color: chalk.gray, icon: "◌" },
+      paused: { color: chalk.magenta, icon: "❚❚" },
     };
 
     // @ts-ignore
@@ -61,9 +62,15 @@ export async function status() {
     );
 
     if (project.url) {
-      table.push({
-        [chalk.bold("URL")]: chalk.underline.blue(project.url),
-      });
+      if (project.status === "paused") {
+        table.push({
+          [chalk.bold("URL")]: chalk.dim.underline.blue(project.url),
+        });
+      } else {
+        table.push({
+          [chalk.bold("URL")]: chalk.underline.blue(project.url),
+        });
+      }
     }
 
     if (project.duration) {
@@ -88,6 +95,14 @@ export async function status() {
     } else if (project.status === "active") {
       console.log(
         chalk.green(`🚀 Your project is live and ready for requests.\n`),
+      );
+    } else if (project.status === "paused") {
+      console.log(
+        chalk.yellow(
+          `⚠️ Your project is currently paused. Run ${chalk.bold(
+            "shiplio resume",
+          )} to reactivate it.\n`,
+        ),
       );
     }
   } catch (error: any) {
