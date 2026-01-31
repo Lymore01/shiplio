@@ -201,40 +201,44 @@ defmodule Engine.Deployments.BuildWorker do
 
     public_port = project.dedicated_port || Engine.Utils.PortAllocator.allocate_next_port()
     internal_port = project.default_port || 3000
+    port_args = ["-p", "#{public_port}:#{internal_port}"]
 
-    merged_env = Map.merge(public_env, project.env_vars || %{})
+    env_vars = Map.merge(public_env, project.env_vars || %{})
 
-    env_flags =
-      merged_env
-      |> Enum.map(fn {k, v} -> "-e #{k}='#{v}'" end)
-      |> Enum.join(" ")
+    env_args =
+      Enum.flat_map(env_vars, fn {k, v} ->
+        ["-e", "#{k}=#{v}"]
+      end)
+
+
+    safe_image_tag = String.downcase(image_tag)
 
     log_info(project_id, :run, "Cleaning up existing containers")
     System.shell("docker rm -f #{container_name} > #{dev_null()} 2>&1")
 
     log_info(project_id, :run, "Booting container")
 
-    run_cmd = """
-    docker run -d \
-      --name #{container_name} \
-      -p #{public_port}:#{internal_port} \
-      -e PORT=#{internal_port} \
-      #{env_flags} \
-      --memory="512m" \
-      --cpus="0.5" \
-      #{image_tag}
-    """
+    args =
+      [
+        "run",
+        "-d",
+        "--name",
+        container_name,
+        "-e",
+        "PORT=#{internal_port}",
+        "--memory",
+        "512m",
+        "--cpus",
+        "0.5"
+      ] ++ port_args ++ env_args ++ [safe_image_tag]
 
-    case System.shell(run_cmd) do
+    case System.cmd("docker", args, stderr_to_stdout: true) do
       {raw_id, 0} ->
         container_id = String.trim(raw_id)
-
-        log_info(project_id, :run, "Waiting for app on port #{public_port}")
-
         {:ok, public_port, container_id}
 
-      _ ->
-        {:error, "Failed to start container"}
+      {error_msg, _exit_code} ->
+        {:error, "Docker failed: #{String.trim(error_msg)}"}
     end
   end
 

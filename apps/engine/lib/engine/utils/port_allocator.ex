@@ -3,7 +3,7 @@ defmodule Engine.Utils.PortAllocator do
   alias Engine.Repo
   alias Engine.Projects.Project
 
-  @start_port 10000
+  @start_port 15000
 
   def allocate_next_port do
     query = from p in Project, select: max(p.dedicated_port)

@@ -103,10 +103,15 @@ defmodule EngineWeb.ProjectController do
     end
   end
 
-  def set_env(conn, %{"id" => project_id, "env" => new_vars}) do
+  def set_env(conn, %{"id" => project_id, "env_vars" => new_vars} = params) do
     project = Projects.get_project!(project_id)
+    mode = Map.get(params, "mode", "merge")
 
-    updated_env = Map.merge(new_vars || %{}, project.env_vars)
+    updated_env =
+      case mode do
+        "replace" -> new_vars || %{}
+        "merge" -> Map.merge(new_vars || %{}, project.env_vars)
+      end
 
     {:ok, updated_project} =
       Projects.update_project(project, %{env_vars: updated_env})

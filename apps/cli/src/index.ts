@@ -15,6 +15,7 @@ import { listEnv } from "./commands/listEnv.js";
 import { unsetEnv } from "./commands/unsetEnv.js";
 import { pause } from "./commands/pause.js";
 import { resume } from "./commands/resume.js";
+import { pushEnvFromDotEnv } from "./commands/env.js";
 
 const program = new Command();
 
@@ -61,6 +62,17 @@ env
     await listEnv(options);
   });
 
+env
+  .command("push")
+  .description("Push local .env variables to the server")
+  .option(
+    "-r, --replace",
+    "Replace all server variables with local .env (default: merge)",
+  )
+  .action(async (options) => {
+    await pushEnvFromDotEnv(options);
+  });
+  
 env
   .command("unset [keys...]")
   .description("Unset environment variables by keys")

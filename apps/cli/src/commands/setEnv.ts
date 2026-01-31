@@ -5,44 +5,48 @@ import ora from "ora";
 import { handleError } from "../utils/formatErrors.js";
 
 export async function setEnv(vars: string[]) {
-  if (!Array.isArray(vars)) {
-    console.log(chalk.red("✖ Expected an array of variables."));
-    return;
-  }
-
-  if (!vars || vars.length === 0) {
-    console.log(
-      chalk.yellow("Usage: shiplio env set KEY=VALUE [KEY2=VALUE2...]"),
-    );
+  if (!Array.isArray(vars) || vars.length === 0) {
+    console.log(chalk.yellow("Usage: shiplio env set KEY=VALUE [KEY2=VALUE2...]"));
     return;
   }
 
   const config = await readShiplioConfig();
-  if (!config) return console.log(chalk.red("✖ No shiplio.json found."));
+  if (!config) {
+    console.log(chalk.red("✖ No shiplio.json found. Run 'shiplio init' first."));
+    return;
+  }
 
   const envMap: Record<string, string> = {};
-
   vars.forEach((arg) => {
-    if (!arg.includes("=")) return;
+    if (!arg.includes("=")) {
+      console.log(chalk.dim(`  ${chalk.yellow("⚠")} Skipping invalid format: ${arg}`));
+      return;
+    }
     const [key, ...valueParts] = arg.split("=");
     envMap[key] = valueParts.join("=");
   });
 
-  if (Object.keys(envMap).length === 0) {
-    return console.log(chalk.yellow("Usage: shiplio env set KEY=VALUE"));
-  }
+  const keys = Object.keys(envMap);
+  if (keys.length === 0) return;
 
-  const spinner = ora("Updating secrets on server...\n").start();
+  const spinner = ora(`Setting ${keys.length} variable(s) on server...`).start();
+
   try {
     await apiClient.patch(`/projects/${config.project_id}/env`, {
-      env: envMap,
+      env_vars: envMap,
     });
-    spinner.succeed(
-      "Secrets updated. Note: It may take a few seconds for the changes to reflect in your running application.",
-    );
+
+    spinner.succeed(chalk.green(`Successfully updated ${keys.length} variables.`));
+
+    console.log(chalk.bold("\nUpdated Keys:"));
+    keys.forEach((key) => {
+      console.log(`  ${chalk.green("✔")} ${chalk.dim(key)}`);
+    });
+
+    console.log(chalk.yellow(`\nℹ The container is restarting to apply changes.`));
+    
   } catch (err) {
     spinner.stop();
     handleError(err, "Failed to set environment variables.");
   }
 }
-

@@ -64,7 +64,7 @@ GET http://localhost:4000/api/projects
 Authorization: Bearer {{token}}
 
 ### Get Project Details
-GET http://localhost:4000/api/projects/77
+GET http://localhost:4000/api/projects/79
 Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzaGlwbGlvIiwiZXhwIjoxNzcxNzg4MTA0LCJpYXQiOjE3NjkxOTYxMDQsImlzcyI6InNoaXBsaW8iLCJqdGkiOiJiNGFmMjExNC01ZWZiLTQwZjUtOTEzNS1lOWFjZDAzNDQ4MWMiLCJuYmYiOjE3NjkxOTYxMDMsInN1YiI6IjEwIiwidHlwIjoiYWNjZXNzIn0.hCHgXR2FGdmWSj7lS8prQ0es8_uY6H6EZj9WVbcnmVksabjn4fNaMiKdLmgmIDa0nNCDNL55wbUg6cjktwwrkw
 
 ### Me
@@ -72,5 +72,16 @@ GET http://localhost:4000/api/auth/me
 Authorization: Bearer {token}
 
 ### List Environment Variables
-GET http://localhost:4000/api/projects/71/env
+GET http://localhost:4000/api/projects/81/env
 Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzaGlwbGlvIiwiZXhwIjoxNzcxNzg4MTA0LCJpYXQiOjE3NjkxOTYxMDQsImlzcyI6InNoaXBsaW8iLCJqdGkiOiJiNGFmMjExNC01ZWZiLTQwZjUtOTEzNS1lOWFjZDAzNDQ4MWMiLCJuYmYiOjE3NjkxOTYxMDMsInN1YiI6IjEwIiwidHlwIjoiYWNjZXNzIn0.hCHgXR2FGdmWSj7lS8prQ0es8_uY6H6EZj9WVbcnmVksabjn4fNaMiKdLmgmIDa0nNCDNL55wbUg6cjktwwrkw
+
+
+### Set Environment Variables
+PATCH http://localhost:4000/api/projects/81/env
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzaGlwbGlvIiwiZXhwIjoxNzcxNzg4MTA0LCJpYXQiOjE3NjkxOTYxMDQsImlzcyI6InNoaXBsaW8iLCJqdGkiOiJiNGFmMjExNC01ZWZiLTQwZjUtOTEzNS1lOWFjZDAzNDQ4MWMiLCJuYmYiOjE3NjkxOTYxMDMsInN1YiI6IjEwIiwidHlwIjoiYWNjZXNzIn0.hCHgXR2FGdmWSj7lS8prQ0es8_uY6H6EZj9WVbcnmVksabjn4fNaMiKdLmgmIDa0nNCDNL55wbUg6cjktwwrkw
+
+{
+  "env": {
+    "MY_SECRET": "supersecretvalue"
+  }
+}
