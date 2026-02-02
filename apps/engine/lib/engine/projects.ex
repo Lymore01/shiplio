@@ -43,6 +43,8 @@ defmodule Engine.Projects do
   def create_project(%User{} = user, attrs \\ %{}) do
     dedicated_port = Engine.Utils.PortAllocator.allocate_next_port()
 
+    unique_name = Engine.Utils.Helpers.generate_unique_name(attrs["name"] || attrs[:name])
+    attrs = Map.put(attrs, :name, unique_name)
     attrs = Map.put(attrs, :dedicated_port, dedicated_port)
 
     %Project{}
@@ -65,6 +67,7 @@ defmodule Engine.Projects do
   Deletes a project.
   """
   def delete_project(%Project{} = project) do
+    Engine.Proxy.Caddy.unregister_route(project.id)
     project
     |> Repo.delete()
   end
@@ -100,18 +103,28 @@ defmodule Engine.Projects do
   duration.
   Returns {:ok, project} or {:error, changeset}.
   """
+def mark_project_as_active(project_id, port, container_id, duration_ms \\ nil) do
+  project = Repo.get!(Project, project_id)
 
-  def mark_project_as_active(project_id, port, container_id, duration_ms \\ nil) do
-    vps_ip = System.get_env("SHIPLIO_HOST_IP") || "localhost"
-    url = "http://#{vps_ip}:#{port}"
+  domain = "#{project.name}.shiplio.lvh.me"
+  proxy_url = "http://#{domain}"
 
-    update_project_by_id(project_id, %{
-      status: "active",
-      local_url: url,
-      container_id: container_id,
-      last_build_duration_ms: duration_ms
-    })
+
+  case Engine.Proxy.Caddy.register_route(project_id, domain, port) do
+    :ok ->
+      update_project_by_id(project_id, %{
+        status: "active",
+        local_url: proxy_url,
+        container_id: container_id,
+        last_build_duration_ms: duration_ms
+      })
+
+    {:error, reason} ->
+      Logger.error("Failed to register Caddy route for project #{project_id}: #{inspect(reason)}")
+
+      update_project_by_id(project_id, %{status: "proxy_failed"})
   end
+end
 
   @doc """
   Updates the container ID of a project.

@@ -20,16 +20,16 @@ defmodule Engine.Projects.Project do
 
   @doc false
   def changeset(project, attrs) do
-    project
-    |> cast(attrs, [:name, :status, :stack, :default_port, :dedicated_port, :local_url, :container_id, :env_vars, :last_build_duration_ms])
-    |> validate_required([:name])
-    |> validate_length(:name, min: 3, max: 30)
-    |> update_change(:name, &slugify/1)
-    |> validate_format(:name, ~r/^[a-z0-9-]+$/)
-    |> unique_constraint([:name, :user_id], name: :projects_user_id_name_index)
-    |> validate_inclusion(:status, ["initialized", "building", "active", "failed", "stopped", "paused"])
-    |> validate_inclusion(:stack, ["nodejs", "python", "elixir", "nextjs", "django", "flask", "fastapi", "static", "unknown"])
-  end
+  project
+  |> cast(attrs, [:name, :status, :stack, :default_port, :dedicated_port, :local_url, :container_id, :env_vars, :last_build_duration_ms])
+  |> validate_required([:name])
+  |> validate_length(:name, min: 3, max: 30)
+  |> update_change(:name, &slugify/1)
+  |> validate_format(:name, ~r/^[a-z0-9-]+$/)
+  |> unique_constraint(:name, message: "This project name is already taken globally")
+  |> validate_inclusion(:status, ["initialized", "building", "active", "failed", "stopped", "paused", "proxy_failed"])
+  |> validate_inclusion(:stack, ["nodejs", "python", "elixir", "nextjs", "django", "flask", "fastapi", "static", "unknown"])
+end
 
   defp slugify(name) when is_binary(name) do
     name

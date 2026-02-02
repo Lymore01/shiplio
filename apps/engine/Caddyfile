@@ -2,10 +2,11 @@
 	admin localhost:2019
 }
 
-http://shiplio.test {
+http://shiplio.lvh.me {
     respond "Welcome to Shiplio Root"
 }
 
-http://api.shiplio.test {
-    reverse_proxy localhost:4000
+http://api.shiplio.lvh.me {
+    reverse_proxy localhost:4000 
+    tls internal
 }

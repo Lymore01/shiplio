@@ -36,6 +36,7 @@ defmodule Engine.Deployments.BuildWorker do
 
         formatted_duration = format_duration(duration_ms)
 
+        # Engine.Proxy.Caddy.unregister_route(state.project_id)
         {:ok, updated_project} =
           Engine.Projects.mark_project_as_active(
             state.project_id,
@@ -52,6 +53,14 @@ defmodule Engine.Deployments.BuildWorker do
       {:error, reason} ->
         end_time = System.monotonic_time(:milliseconds)
         duration_ms = end_time - start_time
+
+        case Engine.Proxy.Caddy.unregister_route(state.project_id) do
+          :ok ->
+            :ok
+
+          {:error, _} ->
+            log_error(state.project_id, :done, "Warning: Could not contact Caddy for cleanup")
+        end
 
         Engine.Projects.update_project_by_id(state.project_id, %{
           status: "failed",
@@ -209,7 +218,6 @@ defmodule Engine.Deployments.BuildWorker do
       Enum.flat_map(env_vars, fn {k, v} ->
         ["-e", "#{k}=#{v}"]
       end)
-
 
     safe_image_tag = String.downcase(image_tag)
 
