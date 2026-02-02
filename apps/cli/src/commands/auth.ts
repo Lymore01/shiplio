@@ -99,7 +99,7 @@ export async function register() {
 // magic-link flow
 export async function loginViaWeb() {
   const PORT = 54321;
-  const SERVER_URL = "http://localhost:4000";
+  const SERVER_URL = "http://api.shiplio.lvh.me";
   const callbackUrl = `http://localhost:${PORT}`;
 
   const authUrl = `${SERVER_URL}/cli/auth?callback=${encodeURIComponent(
