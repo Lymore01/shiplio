@@ -16,6 +16,7 @@ import { unsetEnv } from "./commands/unsetEnv.js";
 import { pause } from "./commands/pause.js";
 import { resume } from "./commands/resume.js";
 import { pushEnvFromDotEnv } from "./commands/env.js";
+import { sshCommand } from "./commands/ssh.js";
 
 const program = new Command();
 
@@ -72,7 +73,7 @@ env
   .action(async (options) => {
     await pushEnvFromDotEnv(options);
   });
-  
+
 env
   .command("unset [keys...]")
   .description("Unset environment variables by keys")
@@ -80,6 +81,10 @@ env
     return unsetEnv(keys);
   });
 
+program
+  .command("ssh")
+  .description("SSH into your running container")
+  .action(sshCommand);
 program.command("pause").description("Pause your project").action(pause);
 program.command("resume").description("Resume your project").action(resume);
 
