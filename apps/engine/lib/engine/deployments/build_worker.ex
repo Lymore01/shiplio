@@ -36,19 +36,28 @@ defmodule Engine.Deployments.BuildWorker do
 
         formatted_duration = format_duration(duration_ms)
 
-        # Engine.Proxy.Caddy.unregister_route(state.project_id)
-        {:ok, updated_project} =
-          Engine.Projects.mark_project_as_active(
-            state.project_id,
-            port,
-            container_id,
-            duration_ms
-          )
+        case Engine.Utils.HealthCheck.wait_for_healthy("localhost", port) do
+          {:ok, :healthy} ->
+            {:ok, updated_project} =
+              Engine.Projects.mark_project_as_active(
+                state.project_id,
+                port,
+                container_id,
+                duration_ms
+              )
 
-        EngineWeb.Endpoint.broadcast("logs:#{state.project_id}", "build_complete", %{
-          url: updated_project.local_url,
-          duration: formatted_duration
-        })
+            EngineWeb.Endpoint.broadcast("logs:#{state.project_id}", "build_complete", %{
+              url: updated_project.local_url,
+              duration: formatted_duration
+            })
+
+            :ok
+
+          {:error, :timeout} ->
+            Engine.Docker.Client.stop_container(container_id)
+
+            {:error, "Health check timed out after container start"}
+        end
 
       {:error, reason} ->
         end_time = System.monotonic_time(:milliseconds)

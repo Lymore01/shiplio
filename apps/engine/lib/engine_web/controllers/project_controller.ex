@@ -69,6 +69,7 @@ defmodule EngineWeb.ProjectController do
             url: project.local_url,
             default_port: project.default_port,
             duration: project.last_build_duration_ms,
+            container_id: project.container_id,
             inserted_at:
               project.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_iso8601(),
             updated_at:
