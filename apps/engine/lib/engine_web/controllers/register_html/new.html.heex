@@ -1,6 +1,5 @@
 <div class="auth-container">
-
-<%= if flash = Phoenix.Flash.get(@flash, :error) do %>
+ <%= if flash = Phoenix.Flash.get(@flash, :error) do %>
     <div class="flash-error">
       <%= flash %>
     </div>
@@ -12,20 +11,27 @@
     </div>
   <% end %>
 
-  <h1>Authorize Shiplio</h1>
-  <p>Sign in to allow the CLI to manage your deployments</p>
+  <h1>Create your account</h1>
+  <p>Join Shiplio to start deploying your projects in seconds.</p>
 
-  <.form :let={_f} for={%{}} action={~p"/login"} method="post">
-    <input type="hidden" name="callback" value={@callback} />
-   <div class="field">
-      <label>Email</label>
+  <.form :let={_f} for={@changeset} action={~p"/register"} method="post">
+    <div class="field">
+      <label>Email Address</label>
       <input
         type="email"
         name="email"
+        value={Ecto.Changeset.get_field(@changeset, :email)}
         required
-        placeholder="you@example.com"
-        autocomplete="one-time-code" 
-      /></div>
+        placeholder="name@company.com"
+        autocomplete="email"
+        class={if @changeset.action && @changeset.errors[:email], do: "input-error"}
+      />
+      <%= if @changeset.action do %>
+  <%= if error = @changeset.errors[:email] do %>
+    <span class="field-error"><%= translate_error(error) %></span>
+  <% end %>
+<% end %>
+    </div>
 
     <div class="field">
       <label>Password</label>
@@ -34,26 +40,37 @@
           id="password-input"
           type="password"
           name="password"
-          placeholder="*********"
+          value={Ecto.Changeset.get_field(@changeset, :password)}
+          placeholder="Create a strong password"
           required
           autocomplete="new-password"
+          class={if @changeset.action && @changeset.errors[:password], do: "input-error"}
         />
         <button type="button" id="password-toggle" class="toggle-btn">
           <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
         </button>
       </div>
+    <%= if @changeset.action do %>
+  <%= if error = @changeset.errors[:password] do %>
+    <span class="field-error"><%= translate_error(error) %></span>
+  <% end %>
+<% end %>
+      <div class="strength-meter">
+        <div id="strength-bar" class="bar"></div>
+      </div>
+      <span id="strength-text" class="strength-label">Enter a password</span>
     </div>
 
-    <button type="submit" class="submit-btn">Sign in & Authorize</button>
+    <button type="submit" class="submit-btn">Create Account</button>
   </.form>
 
   <div class="footer">
-    <p>Don't have an account?<a href="/register"> Create one</a></p>
+    <p>Already have an account? <a href="/login">Sign in instead</a></p>
   </div>
 </div>
 
 <style>
-  :root {
+ :root {
     --bg: #0b0b0b;
     --panel: #111;
     --border: #1f1f1f;
@@ -62,11 +79,23 @@
     --input: #141414;
     --focus: #ffffff;
   }
-
-  body {
+  
+   body {
     background: var(--bg);
     color: var(--text);
   }
+
+  .field-error {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: #ef4444; 
+  }
+
+  .input-error {
+    border-color: #ef4444;
+  }
+
 
   .flash-error { 
     padding: 12px; 
@@ -240,23 +269,68 @@
   button.submit-btn:active {
     transform: scale(0.98);
   }
-</style>
 
+  /* Registration Specific Styles */
+  .strength-meter {
+    height: 4px;
+    width: 100%;
+    background: var(--border);
+    margin-top: 8px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .bar {
+    height: 100%;
+    width: 0%;
+    transition: all 0.3s ease;
+  }
+
+  .strength-label {
+    display: block;
+    font-size: 0.7rem;
+    margin-top: 6px;
+    color: var(--muted);
+  }
+
+  /* Strength Colors */
+  .weak { background: #ef4444; width: 33%; }
+  .medium { background: #f59e0b; width: 66%; }
+  .strong { background: #10b981; width: 100%; }
+
+</style>
 
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const passwordInput = document.getElementById("password-input");
     const toggleBtn = document.getElementById("password-toggle");
     const eyeIcon = document.getElementById("eye-icon");
+    const strengthBar = document.getElementById("strength-bar");
+    const strengthText = document.getElementById("strength-text");
 
     toggleBtn.addEventListener("click", () => {
       const isPassword = passwordInput.type === "password";
       passwordInput.type = isPassword ? "text" : "password";
+      eyeIcon.innerHTML = isPassword 
+        ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>'
+        : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+    });
+
+    passwordInput.addEventListener("input", () => {
+      const val = passwordInput.value;
+      strengthBar.className = "bar";
       
-      if (isPassword) {
-        eyeIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+      if (val.length === 0) {
+        strengthText.innerText = "Enter a password";
+      } else if (val.length < 6) {
+        strengthBar.classList.add("weak");
+        strengthText.innerText = "Too weak";
+      } else if (val.length < 10) {
+        strengthBar.classList.add("medium");
+        strengthText.innerText = "Could be stronger";
       } else {
-        eyeIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+        strengthBar.classList.add("strong");
+        strengthText.innerText = "Strong password";
       }
     });
   });

@@ -31,9 +31,11 @@ defmodule EngineWeb.Router do
 
     get "/cli/auth", CliAuthController, :index
     get "/login", LoginController, :new
+    get "/register", RegisterController, :new
 
     pipe_through :browser_no_csrf
     post "/login", LoginController, :create
+    post "/register", RegisterController, :create
   end
 
   scope "/api", EngineWeb do
