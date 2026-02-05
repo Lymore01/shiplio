@@ -18,20 +18,30 @@ export async function pushEnvFromDotEnv(options: { replace?: boolean }) {
   }
 
   const envPath = path.join(process.cwd(), ".env");
+  const envExamplePath = path.join(process.cwd(), ".env.example");
 
-  if (!(await fs.pathExists(envPath))) {
+  let sourceFile = null;
+  let sourceFileName = null;
+
+  if (await fs.pathExists(envPath)) {
+    sourceFile = envPath;
+    sourceFileName = ".env";
+  } else if (await fs.pathExists(envExamplePath)) {
+    sourceFile = envExamplePath;
+    sourceFileName = ".env.example";
+  } else {
     console.log(chalk.yellow("⚠ No .env file found in the current directory."));
     return;
   }
 
-  const spinner = ora("Reading .env file...").start();
+  const spinner = ora(`Reading ${sourceFileName} file...`).start();
 
   try {
-    const envRaw = await fs.readFile(envPath, "utf-8");
+    const envRaw = await fs.readFile(sourceFile, "utf-8");
     const envVars = dotenv.parse(envRaw);
     const keys = Object.keys(envVars);
 
-    console.log(envVars)
+    console.log(envVars);
 
     if (keys.length === 0) {
       spinner.info("The .env file is empty. Nothing to sync.");
@@ -58,7 +68,7 @@ export async function pushEnvFromDotEnv(options: { replace?: boolean }) {
       chalk.yellow(`\nℹ The container is restarting to apply changes.`),
     );
   } catch (error) {
-    console.log(error)
+    console.log(error);
     spinner.stop();
     handleError(error, "Failed to push environment variables");
   }
