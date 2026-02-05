@@ -102,9 +102,8 @@ export async function streamBuildLogs(spinner: Ora) {
   });
 }
 
-export async function streamRuntimeLogs(spinner: Ora, tail: number = 50) {
+export async function streamRuntimeLogs(spinner: Ora, tail: number = 50, project_id?: string) {
   const token = readToken();
-  const config = await readShiplioConfig();
 
   const socket = new Socket("ws://localhost:4000/socket", {
     params: { token },
@@ -112,7 +111,7 @@ export async function streamRuntimeLogs(spinner: Ora, tail: number = 50) {
 
   socket.connect();
 
-  const channel = socket.channel(`logs:runtime:${config?.project_id}`, {
+  const channel = socket.channel(`logs:runtime:${project_id}`, {
     tail: tail,
   });
 
@@ -130,7 +129,7 @@ export async function streamRuntimeLogs(spinner: Ora, tail: number = 50) {
     channel
       .join()
       .receive("ok", () => {
-        spinner.succeed(chalk.green(`Connected to ${config?.name} logs`));
+        spinner.succeed(chalk.green(`Connected to project ${project_id} logs`));
         process.stdout.write(
           chalk.yellow("\n--- Showing runtime logs (Ctrl+C to exit) ---\n\n"),
         );

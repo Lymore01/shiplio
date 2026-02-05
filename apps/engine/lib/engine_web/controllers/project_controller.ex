@@ -44,6 +44,8 @@ defmodule EngineWeb.ProjectController do
             status: project.status,
             url: project.local_url,
             default_port: project.default_port,
+            local_url: project.local_url,
+            stack: project.stack,
             inserted_at: project.inserted_at
           }
         end)

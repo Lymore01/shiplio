@@ -1,6 +1,9 @@
+@api_url=http://api.shiplio.lvh.me
+ 
+
 ### 1. Register a new user
 # @name register
-POST http://localhost:4000/api/auth/register
+POST {{api_url}}/api/auth/register
 Content-Type: application/json
 
 {
@@ -10,7 +13,7 @@ Content-Type: application/json
 
 ### 2. Login to get the JWT
 # @name login
-POST http://localhost:4000/api/auth/login
+POST {{api_url}}/api/auth/login
 Content-Type: application/json
 
 {
@@ -23,18 +26,32 @@ Content-Type: application/json
 
 ### 3. Create a project shell
 # @name create_project
-POST http://localhost:4000/api/projects
-Authorization: Bearer {token}
+POST {{api_url}}/api/projects
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzaGlwbGlvIiwiZXhwIjoxNzcxNzg4MTA0LCJpYXQiOjE3NjkxOTYxMDQsImlzcyI6InNoaXBsaW8iLCJqdGkiOiJiNGFmMjExNC01ZWZiLTQwZjUtOTEzNS1lOWFjZDAzNDQ4MWMiLCJuYmYiOjE3NjkxOTYxMDMsInN1YiI6IjEwIiwidHlwIjoiYWNjZXNzIn0.hCHgXR2FGdmWSj7lS8prQ0es8_uY6H6EZj9WVbcnmVksabjn4fNaMiKdLmgmIDa0nNCDNL55wbUg6cjktwwrkw
 Content-Type: application/json
 
 {
-  "name": "my-second-app",
-  "stack": "nodejs",
-  "default_port": 3000
+  "id": 1,
+  "name": "fast-api-service",
+  "status": "active",
+  "stack": "python",
+  "default_port": 8000,
+  "dedicated_port": 4001,
+  "local_url": "fast-api-service.lvh.me",
+  "container_id": "d2e3f4g5h6j7k8l9",
+  "env_vars": {
+    "DATABASE_URL": "postgresql://user:pass@localhost:5432/db",
+    "DEBUG": "false",
+    "API_KEY": "sk_test_51Mz..."
+  },
+  "last_build_duration_ms": 12450,
+  "user_id": 42,
+  "inserted_at": "2026-02-05T10:00:00Z",
+  "updated_at": "2026-02-05T10:30:00Z"
 }
 
 ###
-PATCH http://localhost:4000/api/projects/70/env
+PATCH {{{{api_url}}}}/api/projects/70/env
 Authorization: Bearer {token}
 
 {
@@ -48,7 +65,7 @@ Authorization: Bearer {token}
 
 ### 4. Deploy the Zip File
 # Note: Ensure source.tar.gz exists in the same folder as this .rest file
-POST http://localhost:4000/api/projects/{{project_id}}/deployments
+POST {{api_url}}/api/projects/{{project_id}}/deployments
 Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
@@ -60,24 +77,24 @@ Content-Type: application/gzip
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
 ### Get Projects
-GET http://localhost:4000/api/projects
-Authorization: Bearer {{token}}
+GET {{api_url}}/api/projects
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzaGlwbGlvIiwiZXhwIjoxNzcxNzg4MTA0LCJpYXQiOjE3NjkxOTYxMDQsImlzcyI6InNoaXBsaW8iLCJqdGkiOiJiNGFmMjExNC01ZWZiLTQwZjUtOTEzNS1lOWFjZDAzNDQ4MWMiLCJuYmYiOjE3NjkxOTYxMDMsInN1YiI6IjEwIiwidHlwIjoiYWNjZXNzIn0.hCHgXR2FGdmWSj7lS8prQ0es8_uY6H6EZj9WVbcnmVksabjn4fNaMiKdLmgmIDa0nNCDNL55wbUg6cjktwwrkw
 
 ### Get Project Details
-GET http://localhost:4000/api/projects/79
+GET {{api_url}}/api/projects/79
 Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzaGlwbGlvIiwiZXhwIjoxNzcxNzg4MTA0LCJpYXQiOjE3NjkxOTYxMDQsImlzcyI6InNoaXBsaW8iLCJqdGkiOiJiNGFmMjExNC01ZWZiLTQwZjUtOTEzNS1lOWFjZDAzNDQ4MWMiLCJuYmYiOjE3NjkxOTYxMDMsInN1YiI6IjEwIiwidHlwIjoiYWNjZXNzIn0.hCHgXR2FGdmWSj7lS8prQ0es8_uY6H6EZj9WVbcnmVksabjn4fNaMiKdLmgmIDa0nNCDNL55wbUg6cjktwwrkw
 
 ### Me
-GET http://localhost:4000/api/auth/me
-Authorization: Bearer {token}
+GET {{api_url}}/api/auth/me
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzaGlwbGlvIiwiZXhwIjoxNzcxNzg4MTA0LCJpYXQiOjE3NjkxOTYxMDQsImlzcyI6InNoaXBsaW8iLCJqdGkiOiJiNGFmMjExNC01ZWZiLTQwZjUtOTEzNS1lOWFjZDAzNDQ4MWMiLCJuYmYiOjE3NjkxOTYxMDMsInN1YiI6IjEwIiwidHlwIjoiYWNjZXNzIn0.hCHgXR2FGdmWSj7lS8prQ0es8_uY6H6EZj9WVbcnmVksabjn4fNaMiKdLmgmIDa0nNCDNL55wbUg6cjktwwrkw
 
 ### List Environment Variables
-GET http://localhost:4000/api/projects/81/env
+GET {{api_url}}/api/projects/81/env
 Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzaGlwbGlvIiwiZXhwIjoxNzcxNzg4MTA0LCJpYXQiOjE3NjkxOTYxMDQsImlzcyI6InNoaXBsaW8iLCJqdGkiOiJiNGFmMjExNC01ZWZiLTQwZjUtOTEzNS1lOWFjZDAzNDQ4MWMiLCJuYmYiOjE3NjkxOTYxMDMsInN1YiI6IjEwIiwidHlwIjoiYWNjZXNzIn0.hCHgXR2FGdmWSj7lS8prQ0es8_uY6H6EZj9WVbcnmVksabjn4fNaMiKdLmgmIDa0nNCDNL55wbUg6cjktwwrkw
 
 
 ### Set Environment Variables
-PATCH http://localhost:4000/api/projects/81/env
+PATCH {{api_url}}/api/projects/81/env
 Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzaGlwbGlvIiwiZXhwIjoxNzcxNzg4MTA0LCJpYXQiOjE3NjkxOTYxMDQsImlzcyI6InNoaXBsaW8iLCJqdGkiOiJiNGFmMjExNC01ZWZiLTQwZjUtOTEzNS1lOWFjZDAzNDQ4MWMiLCJuYmYiOjE3NjkxOTYxMDMsInN1YiI6IjEwIiwidHlwIjoiYWNjZXNzIn0.hCHgXR2FGdmWSj7lS8prQ0es8_uY6H6EZj9WVbcnmVksabjn4fNaMiKdLmgmIDa0nNCDNL55wbUg6cjktwwrkw
 
 {

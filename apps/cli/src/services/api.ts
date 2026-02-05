@@ -2,7 +2,7 @@ import axios from "axios";
 import chalk from "chalk";
 import { logOut, readToken } from "../services/auth.js";
 
-const API_URL = process.env.SHIPLIO_API_URL || "http://localhost:4000/api";
+const API_URL = process.env.SHIPLIO_API_URL || "http://api.shiplio.lvh.me/api";
 
 export const apiClient = axios.create({
   baseURL: API_URL,
