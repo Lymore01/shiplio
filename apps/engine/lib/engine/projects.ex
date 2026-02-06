@@ -3,6 +3,7 @@ defmodule Engine.Projects do
   The Projects context. Handles Provisioning and Metadata for Shiplio apps.
   """
 
+  require Logger
   import Ecto.Query, warn: false
   alias Engine.Repo
   alias Engine.Projects.Project

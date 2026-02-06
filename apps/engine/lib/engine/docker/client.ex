@@ -2,9 +2,7 @@ defmodule Engine.Docker.Client do
   require Logger
 
   def stop_container(container_id) do
-    container_name = "shiplio-container-#{container_id}"
-
-    case System.cmd("docker", ["rm", "-f", container_name]) do
+    case System.cmd("docker", ["rm", "-f", container_id]) do
       {_output, 0} ->
         Logger.info("Docker: Forcefully removed container #{container_id}")
         :ok

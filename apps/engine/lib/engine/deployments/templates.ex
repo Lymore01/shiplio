@@ -15,7 +15,7 @@ defmodule Engine.Deployments.Templates do
         nextjs_template(pm, build_cmd, start_cmd, port)
 
       "elixir" ->
-        elixir_template(port)
+        elixir_template(build_cmd, start_cmd, port)
 
       "static" ->
         static_template(port)
@@ -106,48 +106,124 @@ defmodule Engine.Deployments.Templates do
     """
   end
 
-  defp nextjs_template(pm, build_cmd, start_cmd, port) do
-    final_build_cmd = build_cmd || default_build(pm)
+  defp nextjs_template(pm, _build_cmd, _start_cmd, port) do
+    final_build_cmd =
+      case pm do
+        "yarn" -> "yarn run build"
+        "pnpm" -> "pnpm run build"
+        _ -> "npm run build"
+      end
 
     """
+    # syntax=docker.io/docker/dockerfile:1
     FROM node:20-alpine AS base
-    RUN corepack enable && corepack prepare #{pm}@latest --activate
 
+    # --- Stage 1: Dependencies ---
     FROM base AS deps
+    # libc6-compat is required for native modules like 'sharp'
+    RUN apk add --no-cache libc6-compat
     WORKDIR /app
-    COPY package.json #{lockfile_for(pm)}* ./
-    RUN #{pm} install
 
+    # Copy lockfiles and install based on the detected package manager
+    COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./
+    RUN \\
+      if [ -f yarn.lock ]; then yarn --frozen-lockfile; \\
+      elif [ -f package-lock.json ]; then npm ci; \\
+      elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \\
+      else npm install; \\
+      fi
+
+    # --- Stage 2: Builder ---
     FROM base AS builder
     WORKDIR /app
     COPY --from=deps /app/node_modules ./node_modules
     COPY . .
-    ENV NEXT_TELEMETRY_DISABLED 1
+
+    ENV NEXT_TELEMETRY_DISABLED=1
+    # Critical: Force standalone output even if the user forgot next.config.js
+    ENV NEXT_PRIVATE_STANDALONE=true
+
     RUN #{final_build_cmd}
 
+    # --- Stage 3: Runner ---
     FROM base AS runner
     WORKDIR /app
-    ENV NODE_ENV production
-    ENV NEXT_TELEMETRY_DISABLED 1
-    ENV PORT #{port}
 
-    RUN addgroup --system --gid 1001 nodejs
-    RUN adduser --system --uid 1001 nextjs
+    ENV NODE_ENV=production
+    ENV NEXT_TELEMETRY_DISABLED=1
+    ENV PORT=#{port}
+    ENV HOSTNAME="0.0.0.0"
 
-    COPY --from=builder /app/public ./public
-    COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-    COPY --from=builder /app/node_modules ./node_modules
-    COPY --from=builder /app/package.json ./package.json
+    RUN addgroup --system --gid 1001 nodejs && \\
+        adduser --system --uid 1001 nextjs
+
+    COPY --from=builder /app/public* ./public/
+
+    # Copy the standalone output
+    COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+    COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
     USER nextjs
     EXPOSE #{port}
-    CMD [#{format_cmd(start_cmd)}]
+
+    # Next.js standalone mode always uses server.js
+    CMD ["node", "server.js"]
     """
   end
 
-  defp elixir_template(_port) do
+  defp elixir_template(_build_cmd, _start_cmd, port) do
     """
+    # --- Stage 1: Build ---
+    FROM elixir:1.18-slim AS builder
 
+    WORKDIR /app
+    ENV MIX_ENV=prod
+
+    RUN apt-get update && apt-get install -y --no-install-recommends \\
+        ca-certificates git build-essential \\
+        && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+    RUN mix local.hex --force && mix local.rebar --force
+
+    COPY mix.exs mix.lock ./
+    RUN mix deps.get --only prod
+    RUN mix deps.compile
+
+    COPY . .
+
+    # Fix: Using a single RUN line to inject config safely
+    RUN mkdir -p config && \\
+        [ ! -f config/runtime.exs ] && echo 'import Config' > config/runtime.exs || true && \\
+        echo 'config :phoenix, :serve_endpoints, true' >> config/runtime.exs
+
+    RUN mix compile
+    RUN mix release
+
+    # --- Stage 2: Runtime ---
+    FROM elixir:1.18-slim
+
+    WORKDIR /app
+    ENV MIX_ENV=prod
+    ENV PORT=#{port}
+    ENV PHX_SERVER=true
+    ENV ELIXIR_ERL_OPTIONS="-kernel shell_history enabled"
+
+    RUN apt-get update && apt-get install -y --no-install-recommends \\
+        ca-certificates curl \\
+        && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+    COPY --from=builder /app/_build/prod/rel ./rel
+
+    RUN useradd -m shiplio_user && chown -R shiplio_user /app
+    USER shiplio_user
+
+    EXPOSE #{port}
+
+    HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \\
+        CMD curl -f http://localhost:#{port}/ || exit 1
+
+    # Dynamically find the app name and start
+    CMD ["sh", "-c", "APP_NAME=$(ls rel | head -n 1) && exec ./rel/$APP_NAME/bin/$APP_NAME start"]
     """
   end
 
