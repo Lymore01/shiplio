@@ -14,6 +14,7 @@ defmodule Engine.Deployments.CleanupWorker do
       _ -> Logger.warning("Container cleanup skipped or failed: #{String.trim(output)}")
     end
 
+    # if soft is true, we skip image removal
     unless opts[:soft] do
       System.cmd("docker", ["rmi", image_tag])
     end

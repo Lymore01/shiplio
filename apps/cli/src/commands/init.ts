@@ -5,12 +5,14 @@ import {
   generateShiplioJson,
   getCurrentFolderName,
   hasShiplioConfig,
+  updateGitignore,
 } from "../utils/config.js";
 import inquirer from "inquirer";
 import { apiClient } from "../services/api.js";
 import ora from "ora";
 import { handleError } from "../utils/formatErrors.js";
 import { getProjectContext } from "../utils/detectorV2.js";
+import { update } from "tar";
 
 function validateProjectName(name: string) {
   if (!name || !name.trim()) return "Project name cannot be empty.";
@@ -97,6 +99,8 @@ export async function init(projectName: string) {
       detectedFiles: context.detectedFiles,
       detectedPM: context.detectedPM,
     });
+
+    await updateGitignore();
 
     spinner.succeed(chalk.green("Project initialized successfully!"));
 

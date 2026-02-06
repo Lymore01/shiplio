@@ -78,16 +78,24 @@ const GLOBAL_IGNORES = [".git", ".shiplio", ".env", ".DS_Store", "thumbs.db"];
 
 export async function createShiplioIgnoreFile() {
   const ignorePath = path.join(process.cwd(), ".shiplioignore");
+  const gitignorePath = path.join(process.cwd(), ".gitignore");
 
   if (await fs.pathExists(ignorePath)) return;
 
   const { ignoreList: stackIgnores } = await getProjectContext();
 
+  let gitignoreContent = "";
+  if (await fs.pathExists(gitignorePath)) {
+    gitignoreContent = await fs.readFile(gitignorePath, "utf-8");
+  }
+
   const content = [
     "# Shiplio Ignore - prevents large/sensitive files from being uploaded",
-    ...GLOBAL_IGNORES,
+    "# Inherited from .gitignore:",
+    gitignoreContent.trim(),
     "",
-    "# Stack-specific files",
+    "# Shiplio Specifics",
+    ...GLOBAL_IGNORES,
     ...stackIgnores,
   ].join("\n");
 
@@ -108,7 +116,6 @@ const getEnvDefaults = (envVars: string[]) => {
 
   return env;
 };
-
 
 export async function generateShiplioJson(config: any) {
   const content = {
@@ -134,6 +141,29 @@ export async function generateShiplioJson(config: any) {
   await fs.writeJson(path.join(process.cwd(), "shiplio.json"), content, {
     spaces: 2,
   });
+}
+
+export async function updateGitignore() {
+  const gitignorePath = path.join(process.cwd(), ".gitignore");
+  const entry = ".shiplio";
+
+  try {
+    if (!(await fs.pathExists(gitignorePath))) {
+      await fs.writeFile(gitignorePath, `${entry}\n`);
+      return;
+    }
+
+    let content = await fs.readFile(gitignorePath, "utf-8");
+
+    const hasEntry = new RegExp(`^${entry}$`, "m").test(content);
+
+    if (!hasEntry) {
+      const separator = content.endsWith("\n") ? "" : "\n";
+      await fs.appendFile(gitignorePath, `${separator}${entry}\n`);
+    }
+  } catch (error) {
+    console.error("Could not update .gitignore:", error);
+  }
 }
 
 interface ShiplioJson {

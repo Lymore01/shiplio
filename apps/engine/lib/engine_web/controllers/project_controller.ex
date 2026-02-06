@@ -121,17 +121,36 @@ defmodule EngineWeb.ProjectController do
 
     if updated_project.status == "active" do
       Task.Supervisor.start_child(Engine.TaskSupervisor, fn ->
-        Engine.Deployments.BuildWorker.run_docker_container(
-          project.id,
-          "shiplio-app-#{updated_project.id}"
-        )
+        Engine.Proxy.Caddy.unregister_route(project.id)
+
+        {:ok, port, container_id} =
+          Engine.Deployments.BuildWorker.run_docker_container(
+            project.id,
+            "shiplio-app-#{updated_project.id}"
+          )
+
+        case Engine.Utils.HealthCheck.wait_for_healthy("localhost", port) do
+          {:ok, :healthy} ->
+            Engine.Projects.mark_project_as_active(project.id, port, container_id)
+
+            # EngineWeb.Endpoint.broadcast("logs:#{project_id}", "container_ready", %{
+            #   message: "Container is ready and healthy"
+            # })
+
+          {:error, :timeout} ->
+            Engine.Docker.Client.stop_container(container_id)
+
+            # EngineWeb.Endpoint.broadcast("logs:#{project_id}", "container_failed", %{
+            #   message: "Container failed health check. Please try again."
+            # })
+        end
       end)
     end
 
     conn
     |> put_status(:ok)
     |> json(%{
-      message: "Environment variables updated successfully.",
+      message: "Environment variables updated. Container is restarting...",
       env_vars: updated_project.env_vars
     })
   end
@@ -156,17 +175,37 @@ defmodule EngineWeb.ProjectController do
 
     if updated_project.status == "active" do
       Task.Supervisor.start_child(Engine.TaskSupervisor, fn ->
-        Engine.Deployments.BuildWorker.run_docker_container(
-          project.id,
-          "shiplio-app-#{updated_project.id}"
-        )
+        Engine.Proxy.Caddy.unregister_route(project.id)
+
+        {:ok, port, container_id} =
+          Engine.Deployments.BuildWorker.run_docker_container(
+            project.id,
+            "shiplio-app-#{updated_project.id}"
+          )
+
+        # Wait for the container to be healthy before re-registering
+        case Engine.Utils.HealthCheck.wait_for_healthy("localhost", port) do
+          {:ok, :healthy} ->
+            Engine.Projects.mark_project_as_active(project.id, port, container_id)
+
+            # EngineWeb.Endpoint.broadcast("logs:#{project_id}", "container_ready", %{
+            #   message: "Container is ready and healthy"
+            # })
+
+          {:error, :timeout} ->
+            Engine.Docker.Client.stop_container(container_id)
+
+            # EngineWeb.Endpoint.broadcast("logs:#{project_id}", "container_failed", %{
+            #   message: "Container failed health check. Please try again."
+            # })
+        end
       end)
     end
 
     conn
     |> put_status(:ok)
     |> json(%{
-      message: "Environment variables removed successfully.",
+      message: "Environment variables removed. Container is restarting...",
       env_vars: updated_project.env_vars
     })
   end
@@ -208,13 +247,29 @@ defmodule EngineWeb.ProjectController do
               "shiplio-app-#{project.id}"
             )
 
-          Projects.mark_project_as_active(project_id, port, container_id)
+          # Wait for health before marking active
+          case Engine.Utils.HealthCheck.wait_for_healthy("localhost", port) do
+            {:ok, :healthy} ->
+              Projects.mark_project_as_active(project_id, port, container_id)
+
+              # EngineWeb.Endpoint.broadcast("logs:#{project_id}", "container_ready", %{
+              #   message: "Container resumed and healthy"
+              # })
+
+            {:error, :timeout} ->
+              Engine.Docker.Client.stop_container(container_id)
+              Projects.update_project_by_id(project_id, %{status: "failed"})
+
+              # EngineWeb.Endpoint.broadcast("logs:#{project_id}", "container_failed", %{
+              #   message: "Container failed health check on resume"
+              # })
+          end
         end)
 
         conn
         |> put_status(:ok)
         |> json(%{
-          message: "Project resumed successfully."
+          message: "Project resuming. Container is starting..."
         })
 
       _ ->
@@ -241,6 +296,8 @@ defmodule EngineWeb.ProjectController do
 
     case File.cp(tmp_path, dest_path) do
       :ok ->
+        Engine.Deployments.LogBuffer.init_table()
+        Engine.Deployments.LogBuffer.clear_logs(project_id)
         Engine.Deployments.BuildSupervisor.start_build(project.id, dest_path, public_env)
 
         conn

@@ -1,0 +1,23 @@
+{
+  "version": "unknown",
+  "name": "static",
+  "project_id": 116,
+  "stack": "static",
+  "build": {
+    "command": "echo 'Static site - no build required'"
+  },
+  "runtime": {
+    "start_command": "nginx -g 'daemon off;",
+    "port": 80,
+    "env": {
+      "DEPLOYMENT_ENV": "production"
+    }
+  },
+  "metadata": {
+    "confidence": "medium",
+    "detected_files": [
+      "index.html"
+    ],
+    "pm": "unknown"
+  }
+}

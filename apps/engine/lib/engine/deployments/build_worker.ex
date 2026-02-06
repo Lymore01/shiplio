@@ -30,13 +30,19 @@ defmodule Engine.Deployments.BuildWorker do
     PathGuard.safe_delete_project(state.project_id)
 
     case result do
-      {:ok, port, container_id} ->
+      {:ok, port, container_id, stack} ->
         end_time = System.monotonic_time(:milliseconds)
         duration_ms = end_time - start_time
 
         formatted_duration = format_duration(duration_ms)
 
-        case Engine.Utils.HealthCheck.wait_for_healthy("localhost", port) do
+        health_path =
+          case stack do
+            "nextjs" -> "/api/health"
+            _ -> "/"
+          end
+
+        case Engine.Utils.HealthCheck.wait_for_healthy("localhost", port, health_path) do
           {:ok, :healthy} ->
             {:ok, updated_project} =
               Engine.Projects.mark_project_as_active(
@@ -252,7 +258,7 @@ defmodule Engine.Deployments.BuildWorker do
     case System.cmd("docker", args, stderr_to_stdout: true) do
       {raw_id, 0} ->
         container_id = String.trim(raw_id)
-        {:ok, public_port, container_id}
+        {:ok, public_port, container_id, project.stack}
 
       {error_msg, _exit_code} ->
         {:error, "Docker failed: #{String.trim(error_msg)}"}

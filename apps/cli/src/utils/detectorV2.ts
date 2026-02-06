@@ -169,7 +169,7 @@ const STACK_MAP: Record<
     label: "Elixir",
     detectedPM: "mix",
     defaultBuild: "mix deps.get --only prod && MIX_ENV=prod mix compile",
-    defaultStart: "MIX_ENV=prod mix phx.server",
+    defaultStart: "if mix help phx.server > /dev/null 2>&1; then mix phx.server; else mix run --no-halt; fi",
     ignoreList: [
       "deps",
       "_build",

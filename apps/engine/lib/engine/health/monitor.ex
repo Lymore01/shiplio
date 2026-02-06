@@ -21,7 +21,7 @@ defmodule Engine.Health.Monitor do
     )
   end
 
-  def init(state) do
+  def init(_state) do
     schedule_check()
   end
 
@@ -48,7 +48,7 @@ defmodule Engine.Health.Monitor do
 
   defp handle_unhealthy_project(project) do
     new_failures = project.failures + 1
-    Logger.warn("Project #{project.name} is unhealthy (Failure #{new_failures}/3)")
+    Logger.warning("Project #{project.name} is unhealthy (Failure #{new_failures}/3)")
 
     cond do
       new_failures < 3 ->
@@ -77,7 +77,7 @@ defmodule Engine.Health.Monitor do
       message: "⚠️ App unhealthy. Attempting automatic restart..."
     })
 
-    Engine.Docker.Client.restart_container(project.container_id)
+    # Engine.Docker.Client.restart_container(project.container_id)
   end
 
   defp notify_failure(project) do
