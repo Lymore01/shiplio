@@ -30,7 +30,7 @@ export async function whoami() {
     );
   } catch (error) {
     spinner.stop();
-    handleError(error, "Failed to fetch user information");
+    handleError(error, "Failed to fetch user information. Run 'shiplio login' to authenticate.");
     process.exit(1);
   }
 }

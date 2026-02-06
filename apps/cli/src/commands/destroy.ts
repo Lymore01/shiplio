@@ -27,6 +27,7 @@ export async function destroy() {
   const spinner = ora(`Destroying ${config?.name}...\n`).start();
 
   try {
+    // default to hard delete since we're wiping the project, but if the user has a lot of images we can soft delete to speed up the process
     await apiClient.delete(`/projects/${config?.project_id}?soft=false`);
 
     spinner.text = "Cleaning up local configuration files...\n";

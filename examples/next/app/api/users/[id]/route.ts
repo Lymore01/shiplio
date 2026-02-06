@@ -1,8 +1,8 @@
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = parseInt(params.id);
+  const userId = await params.then((p) => p.id);
   return Response.json({
     id: userId,
     name: "User",
