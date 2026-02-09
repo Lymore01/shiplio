@@ -2,31 +2,44 @@
 
 **Shiplio** is a high-performance PaaS (Platform as a Service) built for developers who crave a refined terminal experience and rapid deployment cycles. By combining a robust **Elixir/Phoenix** engine with a modern **Node.js** CLI, Shiplio automates the journey from local source code to live Docker containers.
 
+> "The simplicity of Vercel meets the power of Fly.io - running on your own hardware."
+
 ---
 
 ## Preview
 
-### The Core Workflow
-![The Shiplio deployment workflow from login to successful build](assets/progress_screens/screen_1.png)
-*A seamless flow showing browser-based authentication, project initialization, and a real-time Docker build stream directly in your terminal.*
+### 1. Secure Authentication
+![Browser-based authorization screen for the Shiplio CLI](assets/v2/login_page.png)
+*Run `shiplio login` to launch a secure "Local Loopback" auth bridge. Credentials remain encrypted and are never stored in plain text on your machine.*
 
-### Secure Authentication (Opened automatically after running `shiplio login` )
-![Browser-based authorization screen for the Shiplio CLI](assets/progress_screens/screen_4.png)
-*A secure "Local Loopback" auth pattern that bridges your terminal to a web-based login, ensuring credentials remain encrypted and secure.*
+### 2. Successful Authorization
+![Success page after successfully login in](assets/v2/success_login.png)
+*Once authorized, the Auth Bridge securely transmits the JWT back to your local CLI server, automatically closing the loop for immediate deployment.*
 
-### After Successful Login
-![Success page after successfully login in](assets/progress_screens/screen_5.png)
-*Once authorized, the Auth Bridge securely transmits the JWT back to your local CLI server, automatically closing the loop and readying your environment for immediate deployment*
+### 3. Project Initialization & Insights
+![The Shiplio CLI dashboard and project linking process](assets/v2/initial.png)
+*Shiplio features high-confidence stack detection (Next.js, FastAPI, Elixir, etc.). Use `shiplio status` to view rich metadata and live deployment URLs.*
 
-### Project Insights & Linking
-![The Shiplio CLI dashboard and project linking process](assets/progress_screens/screen_2.png)
-*Use the CLI to link existing directories to your Shiplio account and view rich metadata, including deployment status and live URLs, using a structured TUI.*
+### 4. Real-Time Build Streaming
+![Real-time Docker build logs in the Shiplio CLI](assets/v2/building.png)
+*Watch your deployment come to life. Shiplio streams the Docker build process directly to your terminal, providing instant feedback on layer caching and image exports.*
 
-*Note: We are currently transitioning from localhost port mapping to a custom sub-domain system (e.g., example.shiplio.com) via an integrated reverse proxy.*
+### 5. Deployment Successful!
+![Successful project deployment page](assets/v2/deploy_success.png)
+*Deployment finalized. Once the container is booted and passes the health check, Shiplio provides a live `.lvh.me` URL and high-level deployment metrics.*
 
-### Live Deployments
-![A web browser displaying a successful "Hello World" from a Node.js container](assets/progress_screens/screen_3.png)
-*The end result: your application running inside a Docker container, accessible via a dynamically assigned local port.*
+
+### 6. Environment & Secrets Management
+![Managing environment variables via the Shiplio CLI](assets/v2/env_1.png)
+*Securely manage secrets with masked values. Use the `-r` flag to toggle raw visibility, or use `shiplio env push` to sync your local `.env` file automatically.*
+
+### 7. Container Mastery (SSH & Logs)
+![SSH access and real-time log streaming](assets/v2/ssh_logs.png)
+*Deep visibility into your running apps. SSH directly into your containers for debugging or stream real-time production logs with a single command.*
+
+### 8. Lifecycle Control
+![Pausing and Resuming projects](assets/v2/pause_resume.png)
+*Full control over your resources. Pause projects to save memory or resume them instantly—managed via an integrated **Caddy** reverse proxy with `.lvh.me` sub-domain routing.*
 
 ---
 
@@ -197,6 +210,15 @@ shiplio login
 ### Utility
 - `shiplio ping` - Simple ping test to verify connection
 
+---
+### Contributing
+We welcome contributions! Whether it's adding a new deployment template (Python, Go, Rust) or improving the CLI TUI:
+1. Fork the repo.
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes using [Conventional Commits](https://www.conventionalcommits.org/).
+4. Push to the branch and open a Pull Request.
+
+---
 ## License
 
 MIT
