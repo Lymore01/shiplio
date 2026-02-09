@@ -123,7 +123,7 @@ defmodule EngineWeb.ProjectController do
       Task.Supervisor.start_child(Engine.TaskSupervisor, fn ->
         Engine.Proxy.Caddy.unregister_route(project.id)
 
-        {:ok, port, container_id} =
+        {:ok, port, container_id, _stack} =
           Engine.Deployments.BuildWorker.run_docker_container(
             project.id,
             "shiplio-app-#{updated_project.id}"
@@ -138,7 +138,7 @@ defmodule EngineWeb.ProjectController do
             # })
 
           {:error, :timeout} ->
-            Engine.Docker.Client.stop_container(container_id)
+            Engine.Docker.Client.stop_container(project.id)
 
             # EngineWeb.Endpoint.broadcast("logs:#{project_id}", "container_failed", %{
             #   message: "Container failed health check. Please try again."
@@ -177,7 +177,7 @@ defmodule EngineWeb.ProjectController do
       Task.Supervisor.start_child(Engine.TaskSupervisor, fn ->
         Engine.Proxy.Caddy.unregister_route(project.id)
 
-        {:ok, port, container_id} =
+        {:ok, port, container_id, _stack} =
           Engine.Deployments.BuildWorker.run_docker_container(
             project.id,
             "shiplio-app-#{updated_project.id}"
@@ -193,7 +193,7 @@ defmodule EngineWeb.ProjectController do
             # })
 
           {:error, :timeout} ->
-            Engine.Docker.Client.stop_container(container_id)
+            Engine.Docker.Client.stop_container(project.id)
 
             # EngineWeb.Endpoint.broadcast("logs:#{project_id}", "container_failed", %{
             #   message: "Container failed health check. Please try again."
@@ -241,7 +241,7 @@ defmodule EngineWeb.ProjectController do
     case project.status do
       "paused" ->
         Task.Supervisor.start_child(Engine.TaskSupervisor, fn ->
-          {:ok, port, container_id} =
+          {:ok, port, container_id, _stack} =
             Engine.Deployments.BuildWorker.run_docker_container(
               project.id,
               "shiplio-app-#{project.id}"
@@ -257,7 +257,7 @@ defmodule EngineWeb.ProjectController do
               # })
 
             {:error, :timeout} ->
-              Engine.Docker.Client.stop_container(container_id)
+              Engine.Docker.Client.stop_container(project.id)
               Projects.update_project_by_id(project_id, %{status: "failed"})
 
               # EngineWeb.Endpoint.broadcast("logs:#{project_id}", "container_failed", %{

@@ -22,7 +22,7 @@ defmodule Engine.Utils.HealthCheck do
             "Health Check: Waiting for #{ip}:#{port} (Attempt #{attempt + 1}/#{@max_attempts}, reason: #{inspect(reason)})..."
           )
           Process.sleep(@retry_interval)
-          wait_for_healthy(ip, port, attempt + 1)
+          wait_for_healthy(ip, port, path, attempt + 1)
       end
     end
   end
