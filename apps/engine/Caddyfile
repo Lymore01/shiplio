@@ -1,12 +1,13 @@
 {
 	admin localhost:20200
+    local_certs
 }
 
-http://shiplio.lvh.me {
-    respond "Welcome to Shiplio Root"
-}
-
-http://api.shiplio.lvh.me {
-    reverse_proxy localhost:4000 
+shiplio.lvh.me {
+    respond "Welcome to Shiplio Root"  
     tls internal
+}
+
+api.shiplio.lvh.me {
+    reverse_proxy localhost:4000 
 }

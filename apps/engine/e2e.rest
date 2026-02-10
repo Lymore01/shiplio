@@ -1,5 +1,23 @@
 @api_url=http://api.shiplio.lvh.me
- 
+@caddy_api = http://localhost:20200
+
+### This ensures all project subdomains use internal certificates.
+POST {{caddy_api}}/config/apps/tls/automation/policies
+Content-Type: application/json
+
+{
+  "subjects": [
+    "*.shiplio.lvh.me"
+  ],
+  "issuers": [
+    {
+      "module": "internal"
+    }
+  ]
+}
+
+### 2. Verify the TLS Configuration
+GET {{caddy_api}}/config/apps/tls
 
 ### 1. Register a new user
 # @name register
