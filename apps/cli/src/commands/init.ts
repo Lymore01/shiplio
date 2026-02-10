@@ -13,6 +13,8 @@ import ora from "ora";
 import { handleError } from "../utils/formatErrors.js";
 import { getProjectContext } from "../utils/detectorV2.js";
 import { update } from "tar";
+import dotenv from "dotenv"
+dotenv.config()
 
 function validateProjectName(name: string) {
   if (!name || !name.trim()) return "Project name cannot be empty.";
@@ -121,7 +123,6 @@ export async function init(projectName: string) {
       console.log(chalk.dim("Run 'shiplio login' to get started."));
       process.exit(1);
     }
-
     handleError(error, "Project initialization failed");
   }
 }
