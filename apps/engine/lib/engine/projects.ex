@@ -108,7 +108,7 @@ def mark_project_as_active(project_id, port, container_id, duration_ms \\ nil) d
   project = Repo.get!(Project, project_id)
 
   domain = "#{project.name}.shiplio.lvh.me"
-  proxy_url = "http://#{domain}"
+  proxy_url = "https://#{domain}"
 
 
   case Engine.Proxy.Caddy.register_route(project_id, domain, port) do

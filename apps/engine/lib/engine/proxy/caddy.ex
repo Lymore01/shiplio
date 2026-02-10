@@ -1,7 +1,7 @@
 defmodule Engine.Proxy.Caddy do
   require Logger
 
-  @caddy_api "http://localhost:20200/config/apps/http/servers/srv0/routes"
+  @caddy_api "http://localhost:20200/config/apps/http/servers/srv0/routes/0"
 
   def register_route(project_id, domain, internal_port) do
     payload = %{

@@ -234,8 +234,8 @@ defmodule Engine.Deployments.Templates do
   defp lockfile_for("bun"), do: "bun.lockb"
   defp lockfile_for(_), do: "package-lock.json"
 
-  defp default_build("pnpm"), do: "pnpm build"
-  defp default_build(_), do: "npm run build"
+  # defp default_build("pnpm"), do: "pnpm build"
+  # defp default_build(_), do: "npm run build"
 
   defp default_start(_), do: "npm start"
 

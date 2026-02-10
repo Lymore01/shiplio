@@ -39,7 +39,7 @@ defmodule Engine.Deployments.BuildWorker do
         health_path =
           case stack do
             "nextjs" -> "/api/health"
-            _ -> "/"
+            _ -> "/health"
           end
 
         case Engine.Utils.HealthCheck.wait_for_healthy("localhost", port, health_path) do
@@ -60,7 +60,7 @@ defmodule Engine.Deployments.BuildWorker do
             :ok
 
           {:error, :timeout} ->
-            Engine.Docker.Client.stop_container(container_id)
+            Engine.Docker.Client.stop_container(state.project_id)
 
             {:error, "Health check timed out after container start"}
         end
