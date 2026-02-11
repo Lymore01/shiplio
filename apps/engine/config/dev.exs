@@ -2,10 +2,6 @@ import Config
 
 # Configure your database
 config :engine, Engine.Repo,
-  username: "postgres",
-  password: "postgre",
-  hostname: "localhost",
-  database: "shiplio_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10

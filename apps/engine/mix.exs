@@ -49,7 +49,8 @@ defmodule Engine.MixProject do
       {:pbkdf2_elixir, "~> 2.0"},
       {:phoenix_html_helpers, "~> 1.0"},
       {:tzdata, "~> 1.1"},
-      {:httpoison, "~> 2.3"}
+      {:httpoison, "~> 2.3"},
+      {:dotenvy, "~> 1.1"}
     ]
   end
 
