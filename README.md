@@ -1,8 +1,12 @@
 # Shiplio
 
-**Shiplio** is a high-performance PaaS (Platform as a Service) built for developers who crave a refined terminal experience and rapid deployment cycles. By combining a robust **Elixir/Phoenix** engine with a modern **Node.js** CLI, Shiplio automates the journey from local source code to live Docker containers.
+**Shiplio** is a high-performance, self-hosted **PaaS (Platform as a Service)** designed for developers who love terminals, speed, and control.
 
-> "The simplicity of Vercel meets the power of Fly.io - running on your own hardware."
+It combines a **Node.js-powered CLI** with an **Elixir/Phoenix orchestration engine** to automate the full journey from **local source code → Docker container → live deployment**, all on your own infrastructure.
+
+> **The simplicity of Vercel.  
+> The control of Fly.io.  
+> Running on hardware you own.**
 
 ---
 
@@ -53,7 +57,31 @@
 - **Caddy** (reverse proxy for routing and SSL)
 - **pnpm** (package manager for CLI)
 
+
+## Automatic Setup (Recommended)
+Run the bootstrap script to install dependencies, link the CLI, and setup the database automatically.
+
+**Tip**: use `--dry-run` flag to exec the setup scripts without executing any command
+
+* **macOS/Linux/WSL2:** `./setup.sh` 
+* **Windows:** `.\setup.ps1` 
+
+**NOTE:** If your local Postgres password is not 'postgres', edit the apps/engine/.env file before running the setup script, or edit it after and run mix ecto.setup again.
+
+---
+
+
+### Manual Setup
+<details>
+<summary>Click to view manual installation steps</summary>
+
+1. Install Elixir 1.15+, Node 18+, and PostgreSQL.
+2. Run `mix deps.get` in `apps/engine`.
+3. Create a `.env` file in `apps/engine` (see below).
+4. Run `pnpm install` in `apps/cli`.
+
 ### Backend Setup (Engine)
+**NOTE:** If your local Postgres password is not 'postgres', edit the apps/engine/.env file before running the setup script, or edit it after and run mix ecto.setup again.
 
 ```bash
 # Navigate to engine directory
@@ -130,7 +158,16 @@ Engine runs on `http://localhost:4000`
 **Terminal 2 - Start Caddy (Reverse Proxy):**
 ```bash
 cd apps/engine
-caddy run --config Caddyfile
+caddy start --config Caddyfile
+curl -X POST http://localhost:20200/config/apps/tls/automation/policies \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subjects": ["shiplio.lvh.me", "*.shiplio.lvh.me"],
+    "issuers": [{"module": "internal"}]
+  }'
+
+# Stop the caddy server after use
+caddy stop 
 ```
 Caddy handles routing for deployed applications
 
@@ -139,8 +176,12 @@ Caddy handles routing for deployed applications
 shiplio login
 # Opens browser for authentication
 ```
-
 Once authenticated, try deploying an example:
+</details>
+
+---
+
+## Example Deployments (After local setup)
 ```bash
 cd examples/node
 npm install
@@ -212,7 +253,7 @@ shiplio login
 
 ---
 ### Contributing
-We welcome contributions! Whether it's adding a new deployment template (Python, Go, Rust) or improving the CLI TUI:
+We welcome contributions! Whether it's adding a new deployment template (Ruby, Go, Rust) or improving the CLI TUI:
 1. Fork the repo.
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
 3. Commit your changes using [Conventional Commits](https://www.conventionalcommits.org/).
