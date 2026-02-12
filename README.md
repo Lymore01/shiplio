@@ -32,16 +32,20 @@ It combines a **Node.js-powered CLI** with an **Elixir/Phoenix orchestration eng
 ![Successful project deployment page](assets/v2/deploy_success.png)
 *Deployment finalized. Once the container is booted and passes the health check, Shiplio provides a live `.lvh.me` URL and high-level deployment metrics.*
 
+### 6. Running Application
+![App running successfully](assets/v2/running_app.png)
+*App is running and ready for requests*
 
-### 6. Environment & Secrets Management
+
+### 7. Environment & Secrets Management
 ![Managing environment variables via the Shiplio CLI](assets/v2/env_1.png)
 *Securely manage secrets with masked values. Use the `-r` flag to toggle raw visibility, or use `shiplio env push` to sync your local `.env` file automatically.*
 
-### 7. Container Mastery (SSH & Logs)
+### 8. Container Mastery (SSH & Logs)
 ![SSH access and real-time log streaming](assets/v2/ssh_logs.png)
 *Deep visibility into your running apps. SSH directly into your containers for debugging or stream real-time production logs with a single command.*
 
-### 8. Lifecycle Control
+### 9. Lifecycle Control
 ![Pausing and Resuming projects](assets/v2/pause_resume.png)
 *Full control over your resources. Pause projects to save memory or resume them instantly—managed via an integrated **Caddy** reverse proxy with `.lvh.me` sub-domain routing.*
 
